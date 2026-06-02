@@ -42,6 +42,7 @@ graph TD
 
 ```text
 YoutubeParty/
+├── .gitignore            # Règles d'exclusion Git (exclut node_modules, masters.json, raccourcis *.lnk)
 ├── masters.json          # Sauvegarde persistante des User IDs disposant du rôle Master
 ├── package.json          # Dépendances Node.js (express, socket.io, qrcode)
 ├── server.js             # Serveur principal Node.js (gestion d'état, WebSockets et API)
@@ -103,6 +104,21 @@ Si aucun Master n'est disponible ou si la majorité n'aime pas le morceau actuel
 * Les invités peuvent cliquer sur "VETO".
 * Le seuil de validation est calculé de manière dynamique : `Math.ceil(Nombre_d_invités_actifs / 2)`.
 * Dès que le nombre de votes veto atteint ce seuil, la vidéo en cours est immédiatement coupée et la suivante démarre.
+
+### 🗂️ 6. Interface TV Repliable & Immersive
+L'interface TV a été optimisée pour réduire les distractions visuelles et offrir une immersion totale :
+* **Cartes repliables** : Les blocs "À suivre" et "QR Code" démarrent repliés (pastilles compactes). Ils peuvent être dépliés d'un simple clic.
+* **Persistance du QR Code** : Si le QR code est déplié, il reste visible en permanence à l'écran, même lorsque l'overlay de contrôle principal et le pointeur de la souris s'estompent. S'il est plié, il disparaît proprement avec l'overlay.
+* **Silencing des commandes distantes** : Les commandes envoyées depuis les mobiles (seek, volume, play/pause, skip) ne font plus clignoter ni apparaître l'overlay complet sur la TV. Seules les notifications importantes (toasts) s'affichent temporairement.
+
+### ⏱️ 7. Notification "Son Suivant" Dynamique
+Dans les 30 dernières secondes d'une chanson, un toast élégant apparaît en bas à droite de la TV pour annoncer le prochain morceau (miniature, titre et compte à rebours).
+* **Positionnement dynamique** : Il est ancré au coin inférieur droit de l'écran (`bottom: 3rem`). Si les contrôles de la TV s'affichent, il remonte fluidement à `bottom: 12rem` pour laisser place au bandeau de contrôle sans aucune collision.
+
+### 🖱️ 8. Interaction "Média" Intelligente
+* **Clic dans le vide** : Cliquer n'importe où dans le vide sur la TV met en pause ou relance la vidéo (comportement identique au lecteur YouTube officiel).
+* **Raccourcis clavier** : La touche `Espace` contrôle Play/Pause, tandis que les touches `Flèche Droite` et `Flèche Gauche` permettent de zapper au morceau suivant ou précédent.
+* **Masquage du curseur** : Le pointeur de la souris disparaît automatiquement après 3 secondes d'inactivité pour une expérience visuelle épurée (style cinéma / TV connectée).
 
 ---
 
