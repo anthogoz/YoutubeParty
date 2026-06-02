@@ -1,0 +1,16 @@
+{
+  "name": "youtube-party",
+  "version": "1.0.0",
+  "description": "Système de karaoké et de diffusion de clips pour les soirées contrôlé par smartphone",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "qrcode": "^1.5.3",
+    "socket.io": "^4.7.5"
+  },
+  "author": "Antigravity",
+  "license": "MIT"
+}

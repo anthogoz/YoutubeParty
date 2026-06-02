@@ -1,0 +1,2099 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,600&display=swap');
+
+/* ==========================================================================
+   1. VARIABLES & RÈGLES DE BASE
+   ========================================================================== */
+:root {
+  --bg-black: #030303;
+  --bg-dark: #09090b;
+  --bg-card: rgba(15, 15, 20, 0.7);
+  --bg-card-active: rgba(99, 102, 241, 0.15);
+  --border-color: rgba(255, 255, 255, 0.06);
+  --border-focus: rgba(99, 102, 241, 0.4);
+
+  /* Palette Néon Premium */
+  --primary: #6366f1;
+  /* Indigo */
+  --primary-glow: rgba(99, 102, 241, 0.5);
+  --secondary: #a855f7;
+  /* Violet */
+  --secondary-glow: rgba(168, 85, 247, 0.5);
+  --emerald: #10b981;
+  /* Vert Émeraude (Master / Succès) */
+  --emerald-glow: rgba(16, 185, 129, 0.4);
+  --danger: #f43f5e;
+  /* Rose/Rouge */
+  --danger-glow: rgba(244, 63, 94, 0.4);
+
+  --gradient-neon: linear-gradient(135deg, var(--primary), var(--secondary));
+  --gradient-dark: linear-gradient(180deg, #09090b 0%, #030303 100%);
+
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --shadow-lg: 0 10px 30px -10px rgba(0, 0, 0, 0.7);
+  --glass-effect: backdrop-filter: blur(16px) saturate(180%);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+input,
+textarea {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+}
+
+img {
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-black);
+  background-image: var(--gradient-dark);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1.5;
+}
+
+/* Scrollbar stylisée */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-black);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* ==========================================================================
+   2. STYLES PARTAGÉS & ANIMATIONS
+   ========================================================================== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+  gap: 0.5rem;
+}
+
+.btn-primary {
+  background: var(--gradient-neon);
+  color: #fff;
+  box-shadow: 0 4px 15px var(--primary-glow);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.7);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-danger {
+  background: rgba(244, 63, 94, 0.1);
+  color: var(--danger);
+  border-color: rgba(244, 63, 94, 0.2);
+}
+
+.btn-danger:hover {
+  background: var(--danger);
+  color: #fff;
+  box-shadow: 0 4px 12px var(--danger-glow);
+}
+
+.glass-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(16px);
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-10px) rotate(0.5deg);
+  }
+
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+}
+
+@keyframes pulse-neon {
+
+  0%,
+  100% {
+    box-shadow: 0 0 15px var(--primary-glow), inset 0 0 5px rgba(255, 255, 255, 0.1);
+  }
+
+  50% {
+    box-shadow: 0 0 25px var(--secondary-glow), inset 0 0 10px rgba(255, 255, 255, 0.2);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideDownToast {
+  0% {
+    transform: translate(-50%, 100%);
+    opacity: 0;
+  }
+
+  15% {
+    transform: translate(-50%, -20px);
+    opacity: 1;
+  }
+
+  85% {
+    transform: translate(-50%, -20px);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(-50%, 100%);
+    opacity: 0;
+  }
+}
+
+
+/* ==========================================================================
+   3. DESIGN DE L'ÉCRAN PRINCIPAL (TV - screen.html)
+   ========================================================================== */
+.tv-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #000;
+}
+
+/* Lecteur YouTube plein écran */
+.video-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  /* Bloque les clics sur l'iframe pour masquer l'interface native YT */
+}
+
+.video-background iframe {
+  width: 100vw;
+  height: 100vh;
+  transform: scale(1.01);
+  /* Légèrement plus grand pour éviter les bordures blanches d'1px */
+  border: none;
+}
+
+/* Écran de veille / Idle (Aucune vidéo dans la file) */
+.idle-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: radial-gradient(circle at center, #0e0d16 0%, #030303 100%);
+  z-index: 10;
+  transition: opacity 0.8s ease;
+  padding: 2rem;
+}
+
+.idle-content {
+  text-align: center;
+  max-width: 800px;
+  animation: float 6s ease-in-out infinite;
+}
+
+.party-title {
+  font-size: 4rem;
+  font-weight: 800;
+  background: var(--gradient-neon);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 0.5rem;
+  letter-spacing: -2px;
+}
+
+.party-subtitle {
+  font-size: 1.5rem;
+  color: var(--text-secondary);
+  margin-bottom: 3rem;
+  font-weight: 300;
+}
+
+.qr-card-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 3rem;
+  margin-top: 2rem;
+}
+
+.qr-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 2rem;
+  backdrop-filter: blur(12px);
+  animation: pulse-neon 4s infinite alternate;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.qr-image {
+  width: 250px;
+  height: 250px;
+  background: #fff;
+  padding: 10px;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.join-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: left;
+  max-width: 400px;
+}
+
+.join-step {
+  margin-bottom: 1.5rem;
+}
+
+.join-step h3 {
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 0.2rem;
+}
+
+.join-step p {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+}
+
+.join-url {
+  font-family: monospace;
+  font-size: 1.4rem;
+  color: var(--emerald);
+  background: rgba(16, 185, 129, 0.08);
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  display: inline-block;
+  margin-top: 0.5rem;
+}
+
+/* Bandeau de notification TV (S'affiche en bas) */
+.toast-notification {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translate(-50%, 100%);
+  width: 600px;
+  max-width: 90vw;
+  background: rgba(10, 10, 12, 0.85);
+  border: 1px solid var(--primary);
+  border-radius: 16px;
+  padding: 1rem 1.5rem;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.9), 0 0 20px rgba(99, 102, 241, 0.3);
+  backdrop-filter: blur(12px);
+  pointer-events: none;
+  opacity: 0; /* Évite les fuites de lueur (box-shadow) en bas de l'écran quand inactif */
+}
+
+.toast-notification.active {
+  animation: slideDownToast 5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+}
+
+.toast-img {
+  width: 70px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.toast-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.toast-tag {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--emerald);
+  margin-bottom: 0.1rem;
+  letter-spacing: 1px;
+}
+
+.toast-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toast-user {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.toast-user span {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* Panneau d'administration intégré à la TV (Masqué par défaut) */
+.admin-toggle {
+  z-index: 120;
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  background: rgba(10, 10, 15, 0.7);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  backdrop-filter: blur(16px);
+}
+
+.admin-toggle:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+  box-shadow: 0 0 10px var(--primary-glow);
+}
+
+.tv-admin-panel {
+  position: absolute;
+  top: 7.5rem;
+  right: 3rem;
+  width: 320px;
+  max-height: 80vh;
+  z-index: 110;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  transform: translateY(-20px);
+  pointer-events: none;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tv-admin-panel.active {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: all;
+}
+
+.admin-header {
+  font-size: 1.2rem;
+  font-weight: 700;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+  color: var(--primary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.client-list {
+  list-style: none;
+  overflow-y: auto;
+  max-height: 55vh;
+}
+
+.client-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  margin-bottom: 0.5rem;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.client-item.is-master {
+  background: rgba(16, 185, 129, 0.04);
+  border-color: rgba(16, 185, 129, 0.15);
+}
+
+.client-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+  margin-right: 10px;
+}
+
+.client-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.client-role {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.client-role.master {
+  color: var(--emerald);
+  font-weight: 700;
+}
+
+/* Interrupteur (Checkbox Master) */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 46px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.1);
+  transition: .3s;
+  border-radius: 34px;
+  border: 1px solid var(--border-color);
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: var(--text-secondary);
+  transition: .3s;
+  border-radius: 50%;
+}
+
+input:checked+.slider {
+  background-color: var(--emerald);
+  box-shadow: 0 0 8px var(--emerald-glow);
+}
+
+input:checked+.slider:before {
+  transform: translateX(22px);
+  background-color: white;
+}
+
+
+/* ==========================================================================
+   4. INTERFACE MOBILE (mobile.html)
+   ========================================================================== */
+.mobile-wrapper {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  padding-bottom: 70px;
+  /* Espace pour le panneau flottant des contrôles Master */
+}
+
+/* Écran initial de configuration du pseudo */
+.setup-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--bg-black);
+  z-index: 200;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1.5rem;
+  transition: opacity 0.5s ease;
+}
+
+.setup-card {
+  width: 100%;
+  max-width: 360px;
+  padding: 2.5rem 2rem;
+  text-align: center;
+}
+
+.setup-card h2 {
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  background: var(--gradient-neon);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.setup-card p {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin-bottom: 2rem;
+}
+
+.input-group {
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+.input-group label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.5px;
+}
+
+.text-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.3s;
+}
+
+.text-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 10px var(--primary-glow);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* En-tête de l'application mobile */
+.mobile-header {
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-color);
+  background: rgba(9, 9, 11, 0.85);
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  z-index: 90;
+}
+
+.logo-text {
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.logo-text span {
+  background: var(--gradient-neon);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.user-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.user-badge .indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--text-muted);
+}
+
+.user-badge.guest .indicator {
+  background-color: var(--secondary);
+  box-shadow: 0 0 6px var(--secondary-glow);
+}
+
+.user-badge.master .indicator {
+  background-color: var(--emerald);
+  box-shadow: 0 0 6px var(--emerald-glow);
+}
+
+/* Section Lecteur en cours (sur Mobile) */
+.active-player-section {
+  padding: 0.4rem 0.75rem;
+}
+
+.now-playing-card {
+  display: flex;
+  padding: 0.5rem 0.75rem;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.np-thumb-container {
+  position: relative;
+  width: 60px;
+  height: 40px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.np-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.np-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  box-shadow: inset 0 0 15px var(--primary-glow);
+  opacity: 0.5;
+}
+
+.np-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.np-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--primary);
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.np-label .live-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  animation: pulse-live 1.5s infinite;
+}
+
+@keyframes pulse-live {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.6;
+  }
+
+  50% {
+    transform: scale(1.3);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(0.9);
+    opacity: 0.6;
+  }
+}
+
+.np-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 0.05rem;
+}
+
+.np-user {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+.np-user span {
+  color: #fff;
+  font-weight: 500;
+}
+
+.no-video-active {
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 0.82rem;
+  text-align: center;
+  padding: 0.75rem;
+}
+
+/* Onglets / Sections */
+.tab-navigation {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.tab-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 0.88rem;
+  padding: 0.6rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-bottom: 2px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.tab-btn:hover {
+  color: var(--text-secondary);
+}
+
+.tab-btn.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+.panel-content {
+  padding: 0.75rem;
+  flex: 1;
+  display: none;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.panel-content.active {
+  display: block;
+}
+
+/* Barre de recherche */
+.search-container {
+  position: relative;
+  margin-bottom: 1.25rem;
+}
+
+.search-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 1rem 1rem 1rem 3rem;
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.3s;
+}
+
+.search-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 12px var(--primary-glow);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.search-icon {
+  position: absolute;
+  left: 1.2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+/* Liste des résultats de recherche */
+.results-list {
+  list-style: none;
+}
+
+.search-item {
+  display: flex;
+  padding: 0.8rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid var(--border-color);
+  margin-bottom: 0.75rem;
+  gap: 0.8rem;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.search-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.item-thumb-container {
+  position: relative;
+  width: 90px;
+  height: 60px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+  flex-shrink: 0;
+}
+
+.item-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.item-duration {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  background: rgba(0, 0, 0, 0.8);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  color: #fff;
+}
+
+.item-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.item-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.add-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: none;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.25s;
+  flex-shrink: 0;
+}
+
+.add-btn:hover {
+  background: var(--gradient-neon);
+  color: #fff;
+  transform: scale(1.05);
+  box-shadow: 0 0 10px var(--primary-glow);
+}
+
+.add-btn:active {
+  transform: scale(0.95);
+}
+
+/* File d'attente (Queue Playlist) */
+.queue-list {
+  list-style: none;
+}
+
+.queue-item {
+  display: flex;
+  align-items: center;
+  padding: 0.8rem;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  margin-bottom: 0.75rem;
+  gap: 0.8rem;
+  transition: all 0.2s;
+}
+
+.queue-item.active-item {
+  border-color: rgba(99, 102, 241, 0.3);
+  background: rgba(99, 102, 241, 0.03);
+}
+
+.queue-item-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.queue-item-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.queue-item-meta {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-top: 0.1rem;
+}
+
+.queue-item-meta span {
+  color: var(--primary);
+  font-weight: 500;
+}
+
+.empty-queue {
+  text-align: center;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 3rem 1rem;
+}
+
+/* Bouton supprimer d'une vidéo de la file (Master ou Utilisateur qui l'a ajouté) */
+.remove-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.remove-btn:hover {
+  background: rgba(244, 63, 94, 0.1);
+  color: var(--danger);
+}
+
+/* ==========================================================================
+   5. BARRE DE CONTRÔLES MASTER (mobile.html - Flottante en bas)
+   ========================================================================== */
+.master-controls-panel {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%) translateY(100%);
+  width: 100%;
+  max-width: 480px;
+  background: rgba(10, 10, 15, 0.95);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.4rem 1rem 0.6rem 1rem;
+  z-index: 100;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(20px);
+}
+
+.master-controls-panel.visible {
+  transform: translateX(-50%) translateY(0);
+}
+
+.master-panel-title {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--emerald);
+  letter-spacing: 1px;
+  text-align: center;
+  margin-bottom: 0.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.master-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.control-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.control-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.control-btn:active {
+  transform: scale(0.92);
+}
+
+.control-btn.btn-play-pause {
+  width: 44px;
+  height: 44px;
+  background: var(--gradient-neon);
+  border: none;
+  box-shadow: 0 4px 15px var(--primary-glow);
+  color: #fff;
+}
+
+.control-btn.btn-play-pause:hover {
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.7);
+  transform: scale(1.05);
+}
+
+.control-btn.btn-play-pause:active {
+  transform: scale(0.95);
+}
+
+/* Style de notification d'erreur/succès légère sur Mobile */
+.mobile-toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-50px);
+  background: rgba(244, 63, 94, 0.9);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.8rem 1.2rem;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  z-index: 300;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+  box-shadow: var(--shadow-lg);
+}
+
+.mobile-toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+.mobile-toast.success {
+  background: rgba(16, 185, 129, 0.9);
+}
+
+/* ==========================================================================
+   6. RESPONSIVE DESIGN & TWEAKS POUR TV / ÉCRAN
+   ========================================================================== */
+@media (min-width: 1024px) {
+
+  /* Pour l'écran TV */
+  .party-title {
+    font-size: 5.5rem;
+  }
+}
+
+/* ==========================================================================
+   7. OVERLAY DE CONTRÔLES TV IMMERSIF (Style YouTube TV)
+   ========================================================================== */
+.tv-controls-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 80;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7) 0%, transparent 25%, transparent 75%, rgba(0, 0, 0, 0.85) 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 3rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tv-controls-overlay.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.tv-overlay-top {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+  animation: slideDownToast 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tv-overlay-qr-card {
+  background: rgba(10, 10, 15, 0.85);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 1rem 1.5rem;
+  backdrop-filter: blur(16px);
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  box-shadow: var(--shadow-lg);
+}
+
+.tv-overlay-qr-image {
+  width: 90px;
+  height: 90px;
+  background: #fff;
+  padding: 4px;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.tv-overlay-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(10, 10, 15, 0.85);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-color);
+  padding: 1.5rem 2.5rem;
+  border-radius: 24px;
+  box-shadow: var(--shadow-lg), 0 0 20px rgba(99, 102, 241, 0.1);
+  animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tv-overlay-info {
+  flex: 1;
+  min-width: 0;
+  margin-right: 2rem;
+}
+
+.tv-overlay-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 0.2rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.5px;
+}
+
+.tv-overlay-meta {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+}
+
+.tv-overlay-meta span {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.tv-overlay-buttons {
+  display: flex;
+  gap: 1.2rem;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.tv-control-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tv-control-btn:hover {
+  background: var(--gradient-neon);
+  border-color: transparent;
+  transform: scale(1.1);
+  box-shadow: 0 0 15px var(--primary-glow);
+}
+
+.tv-control-btn:active {
+  transform: scale(0.92);
+}
+
+/* ==========================================================================
+   8. SYSTEME DE RECHERCHE TV & DRAG & DROP DES PLAYLISTS
+   ========================================================================== */
+
+/* Styles pour la barre de recherche TV */
+.tv-search-container {
+  position: relative;
+  width: 380px;
+  display: flex;
+  flex-direction: column;
+}
+
+.tv-search-box {
+  position: relative;
+  width: 100%;
+}
+
+.tv-search-box input {
+  width: 100%;
+  background: rgba(10, 10, 15, 0.7);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 0.9rem 1rem 0.9rem 3rem;
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.3s;
+  backdrop-filter: blur(16px);
+}
+
+.tv-search-box input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 15px var(--primary-glow);
+  background: rgba(10, 10, 15, 0.95);
+}
+
+.tv-search-icon {
+  position: absolute;
+  left: 1.1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+  width: 18px;
+  height: 18px;
+}
+
+.tv-search-results {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 100%;
+  max-height: 380px;
+  overflow-y: auto;
+  list-style: none;
+  padding: 0.5rem;
+  z-index: 150;
+  display: none;
+}
+
+.tv-search-results.active {
+  display: block;
+}
+
+.tv-search-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.6rem;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.tv-search-item:hover,
+.tv-search-item.selected {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.tv-search-item.selected {
+  background: var(--bg-card-active);
+  border-color: var(--primary);
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.2);
+}
+
+.tv-search-item img {
+  width: 60px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.tv-search-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.tv-search-item-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0.1rem;
+}
+
+.tv-search-item-duration {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+/* Styles pour le Drag and Drop de la file d'attente (Mobile/Desktop) */
+.queue-item {
+  transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
+}
+
+.queue-item.dragging {
+  opacity: 0.25;
+  border: 1.5px dashed var(--primary) !important;
+  background: rgba(99, 102, 241, 0.05) !important;
+  box-shadow: none !important;
+}
+
+/* Effets d'insertion stables (sans décalage physique pour éviter tout sautillement/scintillement) */
+.queue-item.drag-insert-before {
+  border-top: 3px solid var(--emerald) !important;
+  background: rgba(16, 185, 129, 0.06) !important;
+}
+
+.queue-item.drag-insert-after {
+  border-bottom: 3px solid var(--emerald) !important;
+  background: rgba(16, 185, 129, 0.06) !important;
+}
+
+.drag-handle {
+  touch-action: none;
+  /* Empeche le defilement natif sur mobile lors du glissement */
+  user-select: none;
+}
+
+/* Mode recherche plein écran sur mobile pour maximiser l'espace utile avec le clavier */
+.mobile-wrapper.searching-mode .mobile-header,
+.mobile-wrapper.searching-mode .active-player-section,
+.mobile-wrapper.searching-mode .tab-navigation {
+  display: none !important;
+}
+
+.mobile-wrapper.searching-mode .panel-content {
+  padding-top: 0.8rem !important;
+}
+
+/* Styles pour le Drag and Drop sur la TV overlay */
+.tv-queue-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  transition: border-color 0.2s, background-color 0.2s, opacity 0.2s;
+  user-select: none;
+}
+
+.tv-queue-item.dragging {
+  opacity: 0.25;
+  border: 1.5px dashed var(--primary) !important;
+  background: rgba(99, 102, 241, 0.05) !important;
+  box-shadow: none !important;
+}
+
+.tv-queue-item.drag-insert-before {
+  border-top: 3px solid var(--emerald) !important;
+  background: rgba(16, 185, 129, 0.06) !important;
+}
+
+.tv-queue-item.drag-insert-after {
+  border-bottom: 3px solid var(--emerald) !important;
+  background: rgba(16, 185, 129, 0.06) !important;
+}
+
+/* Animation de pulsation danger néon pour le badge Veto TV */
+@keyframes pulse-neon-danger {
+  0% {
+    box-shadow: 0 0 8px rgba(244, 63, 94, 0.2);
+    border-color: rgba(244, 63, 94, 0.2);
+  }
+
+  100% {
+    box-shadow: 0 0 15px rgba(244, 63, 94, 0.5);
+    border-color: rgba(244, 63, 94, 0.6);
+  }
+}
+
+/* Styles pour les émojis flottants sur la TV */
+.floating-emoji {
+  position: absolute;
+  bottom: -80px;
+  transform: translate3d(0, 0, 0);
+  pointer-events: none;
+  animation-name: floatEmoji;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+  will-change: transform, opacity;
+  z-index: 95;
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+  user-select: none;
+}
+
+@keyframes floatEmoji {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0.4) rotate(0deg);
+    opacity: 0;
+  }
+
+  8% {
+    opacity: 1;
+    transform: translate3d(15px, -12vh, 0) scale(1.3) rotate(15deg);
+  }
+
+  30% {
+    transform: translate3d(-20px, -38vh, 0) scale(1.1) rotate(-10deg);
+  }
+
+  60% {
+    transform: translate3d(25px, -68vh, 0) scale(1) rotate(20deg);
+    opacity: 0.9;
+  }
+
+  90% {
+    opacity: 0.7;
+  }
+
+  100% {
+    transform: translate3d(-15px, -110vh, 0) scale(0.8) rotate(-15deg);
+    opacity: 0;
+  }
+}
+
+/* Styles pour les boutons de réactions mobiles */
+.reaction-btn {
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.reaction-btn:active {
+  transform: scale(0.85);
+  filter: brightness(1.2);
+}
+
+/* ==========================================================================
+   9. NOUVELLES FONCTIONNALITÉS v1.0.21
+   ========================================================================== */
+
+/* --- BARRE DE PROGRESSION MOBILE (dans la now-playing card) --- */
+.np-progress-bar {
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  margin-top: 0.35rem;
+  overflow: hidden;
+}
+
+.np-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--gradient-neon);
+  border-radius: 3px;
+  transition: width 0.9s linear;
+}
+
+.np-progress-times {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.62rem;
+  font-weight: 600;
+  font-family: monospace;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
+}
+
+/* --- ANIMATION ÉGALISEUR "NOW PLAYING" --- */
+.equalizer-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.eq-bar {
+  width: 3px;
+  border-radius: 2px;
+  background: var(--primary);
+  animation: eq-bounce 0.8s ease-in-out infinite alternate;
+}
+
+.eq-bar:nth-child(1) {
+  animation-delay: 0s;
+  height: 40%;
+}
+
+.eq-bar:nth-child(2) {
+  animation-delay: 0.15s;
+  height: 80%;
+}
+
+.eq-bar:nth-child(3) {
+  animation-delay: 0.3s;
+  height: 60%;
+}
+
+.eq-bar:nth-child(4) {
+  animation-delay: 0.1s;
+  height: 100%;
+}
+
+@keyframes eq-bounce {
+  0% {
+    transform: scaleY(0.3);
+    opacity: 0.7;
+  }
+
+  100% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+.equalizer-bars.paused .eq-bar {
+  animation-play-state: paused;
+}
+
+/* --- TOAST RICHE (vidéo ajoutée à la playlist) --- */
+.rich-toast {
+  position: fixed;
+  bottom: 90px;
+  /* Au-dessus de la barre de contrôles master */
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  width: calc(100% - 2rem);
+  max-width: 440px;
+  background: rgba(15, 15, 22, 0.96);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  border-radius: 16px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  z-index: 310;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.35s cubic-bezier(0.19, 1, 0.22, 1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 15px rgba(99, 102, 241, 0.15);
+  backdrop-filter: blur(20px);
+}
+
+.rich-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.rich-toast-img {
+  width: 52px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.rich-toast-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.rich-toast-label {
+  font-size: 0.66rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--emerald);
+  letter-spacing: 0.6px;
+  margin-bottom: 0.1rem;
+}
+
+.rich-toast-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- POPUP CONFIRMATION SKIP --- */
+.skip-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 400;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 2rem;
+  opacity: 0;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
+  transition: opacity 0.25s ease;
+}
+
+.skip-confirm-overlay.show {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.skip-confirm-popup {
+  width: calc(100% - 2rem);
+  max-width: 360px;
+  padding: 1.5rem;
+  text-align: center;
+  transform: translateY(30px);
+  transition: transform 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+  border: 1px solid rgba(244, 63, 94, 0.25);
+}
+
+.skip-confirm-overlay.show .skip-confirm-popup {
+  transform: translateY(0);
+}
+
+.skip-confirm-icon {
+  font-size: 2.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.skip-confirm-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 0.2rem;
+}
+
+.skip-confirm-sub {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 1.2rem;
+}
+
+.skip-confirm-buttons {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.skip-confirm-btn {
+  flex: 1;
+  padding: 0.7rem 1rem;
+  border-radius: 12px;
+  border: none;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.skip-cancel {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.skip-cancel:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.skip-yes {
+  background: linear-gradient(135deg, #f43f5e, #e11d48);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.4);
+}
+
+.skip-yes:hover {
+  box-shadow: 0 6px 20px rgba(244, 63, 94, 0.6);
+  transform: translateY(-1px);
+}
+
+.skip-yes:active {
+  transform: scale(0.96);
+}
+
+/* --- SWIPE TO DELETE (visuel) --- */
+.queue-item-swipe-wrapper {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  margin-bottom: 0.75rem;
+}
+
+.queue-item-delete-bg {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: 80px;
+  background: linear-gradient(90deg, transparent, rgba(244, 63, 94, 0.85));
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 1rem;
+  color: #fff;
+  font-size: 1.1rem;
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+  border-radius: 16px;
+}
+
+.queue-item-swipe-wrapper.swiping .queue-item-delete-bg {
+  opacity: 1;
+}
+
+.queue-item.swiping {
+  transform: translateX(-70px);
+  transition: transform 0.15s ease;
+}
+
+.queue-item {
+  will-change: transform;
+  margin-bottom: 0;
+  /* Géré par le wrapper */
+}
+
+/* --- BOUTON AJOUTER EN PREMIER (Master) --- */
+.add-first-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  background: rgba(99, 102, 241, 0.08);
+  color: var(--primary);
+  display: none;
+  /* Visible uniquement en mode Master via JS */
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  flex-direction: column;
+  gap: 0;
+  line-height: 1;
+}
+
+.add-first-btn:hover {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: var(--primary);
+  box-shadow: 0 0 10px var(--primary-glow);
+}
+
+.add-first-btn:active {
+  transform: scale(0.92);
+}
+
+.add-btn-group {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   10. OVERLAY TV : QR ET FILE D'ATTENTE PLIABLES
+   ========================================================================== */
+
+.tv-collapsible-card {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  position: relative;
+  display: flex !important;
+  flex-direction: column;
+}
+
+/* Base states when collapsed */
+.tv-collapsible-card.collapsed {
+  width: 56px !important;
+  height: 56px !important;
+  max-height: 56px !important;
+  padding: 0 !important; /* Pas de padding pour permettre un centrage parfait de l'en-tête */
+  border-radius: 28px !important;
+  cursor: pointer;
+  background: rgba(10, 10, 15, 0.9) !important;
+  border-color: rgba(99, 102, 241, 0.3) !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5) !important;
+  justify-content: center;
+  align-items: center;
+  gap: 0 !important;
+}
+
+.tv-collapsible-card.collapsed:hover {
+  background: rgba(99, 102, 241, 0.15) !important;
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 15px var(--primary-glow) !important;
+}
+
+/* Forcer l'en-tête à centrer l'icône en mode plié */
+.tv-collapsible-card.collapsed .tv-card-header {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Cacher complètement les contenus en mode plié pour libérer l'espace de rendu */
+.tv-collapsible-card.collapsed .tv-card-header-text,
+.tv-collapsible-card.collapsed .tv-chevron,
+.tv-collapsible-card.collapsed .tv-card-body,
+.tv-collapsible-card.collapsed #tv-overlay-queue-list {
+  display: none !important;
+}
+
+/* États d'opacité de base pour un fondu fluide au dépliage */
+.tv-collapsible-card .tv-card-header-text,
+.tv-collapsible-card .tv-chevron,
+.tv-collapsible-card .tv-card-body,
+.tv-collapsible-card #tv-overlay-queue-list {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.tv-collapsible-card:not(.collapsed) .tv-card-header-text,
+.tv-collapsible-card:not(.collapsed) .tv-chevron,
+.tv-collapsible-card:not(.collapsed) .tv-card-body,
+.tv-collapsible-card:not(.collapsed) #tv-overlay-queue-list {
+  opacity: 1;
+}
+
+/* Dimensions spécifiques dépliées */
+#tv-qr-card {
+  width: 420px;
+  height: 200px;
+  max-height: 200px;
+  border-radius: 20px;
+  padding: 1.2rem;
+  gap: 0;
+}
+
+#tv-queue-card {
+  width: 320px;
+  height: 100%;
+  max-height: 100%;
+  border-radius: 16px;
+  padding: 1rem;
+}
+
+/* Scaling de l'icône principale pliée/dépliée */
+.tv-icon-main {
+  width: 24px;
+  height: 24px;
+  color: var(--primary);
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+
+.tv-collapsible-card.collapsed .tv-icon-main {
+  transform: scale(1.1);
+}
+
+.tv-chevron {
+  width: 18px;
+  height: 18px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+
+/* --- POSITIONNEMENT ET LOGIQUE VISUELLE DU QR CARD PERSISTANT --- */
+#tv-qr-card {
+  position: absolute;
+  top: 3rem;
+  left: 3rem;
+  z-index: 90; /* Au-dessus de tv-controls-overlay (z-index 80) */
+  margin: 0;
+}
+
+/* Par défaut, s'il est replié et que la veille est inactive, il suit la visibilité de l'overlay */
+#tv-qr-card.collapsed {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+              width 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              height 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              border-radius 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              padding 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Si l'overlay est affiché, la pastille QR code doit apparaître */
+.tv-controls-overlay.visible ~ #tv-qr-card.collapsed {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* Si le QR code est DEPLIÉ, il reste TOUJOURS visible (même sans mouvement souris/clavier) */
+#tv-qr-card:not(.collapsed) {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* Cache complet en mode veille (idle) */
+#tv-qr-card.hidden-idle {
+  display: none !important;
+}
+
+/* --- TOAST : PROCHAIN MORCEAU (NEXT UP) --- */
+.next-up-toast {
+  position: absolute;
+  bottom: 3rem; /* Placé en bas à droite de manière compacte par défaut */
+  right: 3rem;
+  width: 380px;
+  max-width: 90vw;
+  background: rgba(10, 10, 15, 0.85);
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--emerald); /* Liseré vert néon distinctif */
+  border-radius: 16px;
+  padding: 1rem 1.2rem;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 15px rgba(16, 185, 129, 0.1);
+  backdrop-filter: blur(24px);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.next-up-toast.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Ajuster la position du toast pour éviter la collision quand l'overlay TV est visible */
+.tv-controls-overlay.visible ~ #next-up-toast {
+  bottom: 12rem;
+}
+
+.next-up-img {
+  width: 80px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.next-up-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.next-up-tag {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--emerald);
+  margin-bottom: 0.15rem;
+  letter-spacing: 0.5px;
+}
+
+.next-up-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

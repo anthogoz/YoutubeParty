@@ -1,0 +1,23 @@
+# Dependency directory
+node_modules/
+
+# Runtime persistence data
+masters.json
+
+# Windows shortcuts containing local paths
+*.lnk
+
+# OS files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+# Editor files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp

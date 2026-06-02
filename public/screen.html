@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YoutubeParty - Écran Principal</title>
+  <link rel="stylesheet" href="style.css?v=1.0.21">
+  <!-- Icônes Lucide pour un rendu moderne -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <div class="tv-container">
+    
+    <!-- CONTENEUR DE RÉACTIONS FLOAT TV -->
+    <div id="tv-reactions-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 95;"></div>
+
+    <!-- LECTEUR YOUTUBE (Géré par l'API Iframe) -->
+    <div class="video-background">
+      <div id="player"></div>
+    </div>
+
+    <!-- ÉCRAN DE VEILLE / ACCUEIL (Si file vide) -->
+    <div class="idle-overlay" id="idle-overlay">
+      <div class="idle-content">
+        <h1 class="party-title">YoutubeParty</h1>
+        <p class="party-subtitle">Prenez le contrôle de la musique collectivement</p>
+        
+        <div class="qr-card-container">
+          <div class="qr-card">
+            <img id="qr-image" class="qr-image" src="" alt="QR Code de connexion">
+            <span class="join-url" id="tv-url">Connexion en cours...</span>
+          </div>
+          
+          <div class="join-info">
+            <div class="join-step">
+              <h3><i data-lucide="qr-code" style="vertical-align: middle; margin-right: 8px;"></i>Étape 1</h3>
+              <p>Scannez le QR Code ci-contre avec votre smartphone.</p>
+            </div>
+            
+            <div class="join-step">
+              <h3><i data-lucide="wifi" style="vertical-align: middle; margin-right: 8px;"></i>Étape 2</h3>
+              <p>Assurez-vous d'être connecté sur le même réseau Wi-Fi local.</p>
+            </div>
+            
+            <div class="join-step">
+              <h3><i data-lucide="music" style="vertical-align: middle; margin-right: 8px;"></i>Étape 3</h3>
+              <p>Choisissez un pseudo, cherchez vos clips et ajoutez-les à la playlist !</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTIFICATION : BANDEAU DE DÉBUT DE VIDÉO -->
+    <div class="toast-notification" id="toast">
+      <img id="toast-thumbnail" class="toast-img" src="" alt="Miniature">
+      <div class="toast-details">
+        <div class="toast-tag">À l'écoute</div>
+        <div id="toast-video-title" class="toast-title">Titre de la vidéo...</div>
+        <div class="toast-user">Ajouté par <span id="toast-username">Pseudo</span></div>
+      </div>
+    </div>
+
+    <!-- OVERLAY DE CONTRÔLES TV IMMERSIF (S'affiche lors du mouvement souris/clavier) -->
+    <div id="tv-controls-overlay" class="tv-controls-overlay">
+      
+      <!-- HAUT DE L'OVERLAY : RECHERCHE TV & BOUTON INVITES -->
+      <div class="tv-overlay-top">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <!-- MODULE DE RECHERCHE DIRECTE SUR TV -->
+          <div class="tv-search-container">
+            <div class="tv-search-box">
+              <i data-lucide="search" class="tv-search-icon"></i>
+              <input type="text" id="tv-search-input" placeholder="Rechercher un clip... (Clavier)" autocomplete="off">
+            </div>
+            <ul id="tv-search-results" class="tv-search-results glass-panel"></ul>
+          </div>
+          
+          <!-- BOUTON ADMIN (Pour ouvrir le panneau) -->
+          <button class="admin-toggle" id="admin-btn" title="Liste des invités et paramètres">
+            <i data-lucide="users"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- MILIEU DE L'OVERLAY : PLAYLIST FLOTTANTE À SUIVRE -->
+      <div class="tv-overlay-middle" style="display:flex; justify-content:flex-end; flex:1; margin: 1.5rem 0; overflow:hidden; min-height: 0;">
+        <div class="tv-overlay-queue-card glass-panel tv-collapsible-card collapsed" id="tv-queue-card" style="backdrop-filter:blur(24px);">
+          <div class="tv-card-header" style="display: flex; align-items: center; gap: 0.8rem; width: 100%; cursor: pointer;">
+            <i data-lucide="list-music" class="tv-icon-main" id="tv-queue-icon"></i>
+            <h4 class="tv-card-header-text" style="font-size:0.85rem; font-weight:800; text-transform:uppercase; color:var(--primary); letter-spacing:0.5px; border-bottom:1px solid var(--border-color); padding-bottom:0.4rem; flex: 1; white-space: nowrap;">
+              À SUIVRE...
+            </h4>
+            <i data-lucide="chevron-down" class="tv-chevron" id="tv-queue-chevron"></i>
+          </div>
+          <ul id="tv-overlay-queue-list" style="list-style:none; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:0.4rem; padding-right:4px; width: 100%; margin-top: 0.6rem;">
+            <!-- Rempli en JS -->
+          </ul>
+        </div>
+      </div>
+
+      <!-- BARRE DE PROGRESSION TV -->
+      <div id="tv-progress-container" style="padding: 0 0 0.6rem 0;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.3rem;">
+          <span id="tv-progress-current" style="font-size:0.8rem; font-weight:700; color:var(--text-secondary); font-family:monospace;">0:00</span>
+          <span id="tv-progress-total" style="font-size:0.8rem; font-weight:700; color:var(--text-muted); font-family:monospace;">0:00</span>
+        </div>
+        <div id="tv-progress-track" style="width:100%; height:14px; display:flex; align-items:center; cursor:pointer;">
+          <div style="width:100%; height:4px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden; position:relative; flex:1;">
+            <div id="tv-progress-fill" style="height:100%; width:0%; background:var(--gradient-neon); border-radius:4px; transition:width 0.2s linear;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BAS DE L'OVERLAY : INFOS DU CLIP & COMMANDES DU SERVEUR -->
+      <div class="tv-overlay-bottom">
+        <div class="tv-overlay-info">
+          <div style="display:flex; align-items:center; gap:1rem;">
+            <div class="tv-overlay-title" id="tv-overlay-title">Titre du clip en lecture...</div>
+            
+            <!-- COMPTEUR DE VETO COLLECTIF -->
+            <div id="tv-veto-badge" style="display: none; align-items: center; gap: 0.4rem; background: rgba(244, 63, 94, 0.15); border: 1px solid rgba(244, 63, 94, 0.3); padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.78rem; font-weight: 700; color: var(--danger); box-shadow: 0 0 10px rgba(244, 63, 94, 0.15); animation: pulse-neon-danger 2s infinite alternate;">
+              <i data-lucide="shield-alert" style="width: 12px; height: 12px; vertical-align: middle;"></i>
+              <span>VETO : <span id="tv-veto-count">0</span>/<span id="tv-veto-required">0</span></span>
+            </div>
+          </div>
+          <div class="tv-overlay-meta">Ajouté par <span id="tv-overlay-username">Pseudo</span> • Durée : <span id="tv-overlay-duration">N/A</span></div>
+        </div>
+        
+        <div class="tv-overlay-buttons">
+          <!-- BOUTON PRÉCÉDENT -->
+          <button class="tv-control-btn" id="tv-prev-btn" title="Morceau précédent (Flèche Gauche)">
+            <i data-lucide="skip-back" style="width:24px; height:24px;"></i>
+          </button>
+          
+          <!-- BOUTON PLAY/PAUSE -->
+          <button class="tv-control-btn" id="tv-play-btn" title="Play/Pause (Espace)">
+            <i data-lucide="play" id="tv-play-icon" style="width:24px; height:24px;"></i>
+          </button>
+          
+          <!-- BOUTON SUIVANT -->
+          <button class="tv-control-btn" id="tv-skip-btn" title="Morceau suivant (Flèche Droite)">
+            <i data-lucide="skip-forward" style="width:24px; height:24px;"></i>
+          </button>
+
+          <!-- SÉPARATEUR -->
+          <div style="width:1px; height:30px; background:var(--border-color); margin:0 0.4rem;"></div>
+
+          <!-- CONTROLE DE VOLUME TV -->
+          <div style="display:flex; align-items:center; gap:0.6rem;">
+            <i data-lucide="volume-2" id="tv-vol-icon" style="width:18px; color:var(--text-secondary);"></i>
+            <input type="range" id="tv-vol-slider" min="0" max="100" value="100" style="width: 100px; accent-color: var(--primary); height: 6px; border-radius: 3px; background: rgba(255,255,255,0.1); border: none; outline: none; cursor: pointer;">
+            <span id="tv-vol-text" style="font-size:0.8rem; font-weight:700; color:var(--emerald); min-width:32px; text-align:right;">100%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANNEAU D'ADMINISTRATION DES CLIENTS -->
+      <div class="tv-admin-panel glass-panel" id="admin-panel" style="backdrop-filter: blur(24px);">
+        <div class="admin-header">
+          <span><i data-lucide="users" style="vertical-align: middle; margin-right: 8px; width: 18px;"></i>Invités</span>
+          <button id="close-admin-btn" style="background:none; border:none; color:var(--text-muted); cursor:pointer;">
+            <i data-lucide="x" style="width: 18px;"></i>
+          </button>
+        </div>
+        <ul class="client-list" id="client-list">
+          <!-- Rempli dynamiquement en JS -->
+          <li style="color: var(--text-muted); font-size: 0.9rem; text-align: center; padding: 1rem;">
+            Aucun mobile connecté
+          </li>
+        </ul>
+        <div class="admin-settings" style="border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 1rem; display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; flex-direction: column;">
+            <span style="font-size: 0.85rem; font-weight: 700; color: #fff;">File Fair-Play</span>
+            <span style="font-size: 0.68rem; color: var(--text-secondary);">Alterne équitablement les tours</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="tv-fairplay-checkbox" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- CARTE QR CODE TV REPLIABLE (Placée en dehors de l'overlay pour rester visible si dépliée) -->
+    <div class="tv-overlay-qr-card tv-collapsible-card collapsed hidden-idle" id="tv-qr-card">
+      <div class="tv-card-header" style="display: flex; align-items: center; gap: 0.8rem; width: 100%; cursor: pointer;">
+        <i data-lucide="qr-code" class="tv-icon-main" id="tv-qr-icon"></i>
+        <div class="tv-card-header-text" style="display:flex; flex-direction:column; justify-content:center; flex: 1; min-width: 0;">
+          <span style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:var(--primary); letter-spacing:0.5px;">Rejoindre la Fête</span>
+          <span id="tv-overlay-url" style="font-family:monospace; font-size:1.05rem; color:var(--emerald); font-weight:700; margin-top:0.1rem;">Connexion...</span>
+        </div>
+        <i data-lucide="chevron-down" class="tv-chevron" id="tv-qr-chevron"></i>
+      </div>
+      <div class="tv-card-body" style="display:flex; align-items:center; gap:1.2rem; width: 100%; margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 0.8rem;">
+        <img id="tv-overlay-qr-image" class="tv-overlay-qr-image" src="" alt="QR">
+        <span style="font-size:0.8rem; color:var(--text-secondary); line-height:1.4;">Scannez pour rejoindre la playlist et voter pour vos musiques !</span>
+      </div>
+    </div>
+
+    <!-- NOTIFICATION : PROCHAIN MORCEAU (S'affiche dans les 30 dernières secondes) -->
+    <div class="next-up-toast" id="next-up-toast">
+      <img id="next-up-thumbnail" class="next-up-img" src="" alt="Miniature">
+      <div class="next-up-details">
+        <div class="next-up-tag" id="next-up-countdown">Son suivant dans 30s</div>
+        <div id="next-up-video-title" class="next-up-title">Titre du morceau suivant...</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="screen.js?v=1.0.21"></script>
+</body>
+</html>
