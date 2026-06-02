@@ -1,6 +1,6 @@
 # 🎵 YoutubeParty — Spécifications Techniques & Guide de Développement
 
-Ce document fait office de référence technique (**GEMINI.md**) pour comprendre l'architecture, le fonctionnement et la structure du projet **YoutubeParty**. Il s'adresse aux développeurs ainsi qu'aux agents d'IA pour faciliter la maintenance et l'évolution de la base de code.
+Ce document fait office de référence technique et de tutoriel pour comprendre l'architecture, le fonctionnement et la structure du projet **YoutubeParty**. Il s'adresse aux développeurs ainsi qu'aux agents d'IA pour faciliter la maintenance et l'évolution de la base de code.
 
 ---
 
