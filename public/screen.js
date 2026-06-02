@@ -264,6 +264,12 @@ function onPlayerStateChange(event) {
  
     // Mettre à jour l'icône de l'overlay TV
     updatePlayPauseTVIcon(true);
+
+    // Mettre à jour le HUD en mode lecture (montre play puis s'efface après 800ms)
+    updatePlayPauseHUD('play');
+    
+    // Afficher temporairement l'overlay et lancer le masquage automatique
+    showTVOverlay();
   } else {
     // Stopper le timer si pas en cours de lecture
     stopSponsorBlockTimer();
@@ -275,6 +281,12 @@ function onPlayerStateChange(event) {
       if (!isTransitioning) {
         socket.emit('player_command', { action: 'pause' });
       }
+      
+      // Mettre à jour le HUD en mode pause (montre pause et reste visible)
+      updatePlayPauseHUD('pause');
+      
+      // Afficher l'overlay TV et le maintenir visible
+      showTVOverlay();
     }
   }
 
@@ -285,6 +297,7 @@ function onPlayerStateChange(event) {
     skipSegments = [];
     stopProgressBroadcast(true);
     updatePlayPauseTVIcon(false);
+    updatePlayPauseHUD('hide');
     socket.emit('video_ended');
   }
 }
@@ -298,6 +311,34 @@ function updatePlayPauseTVIcon(isPlaying) {
   }
   refreshIcons();
 }
+
+let hudTimeout = null;
+
+// Gère l'indicateur central HUD Play/Pause
+function updatePlayPauseHUD(action) {
+  const hud = document.getElementById('tv-play-pause-hud');
+  if (!hud) return;
+  
+  clearTimeout(hudTimeout);
+  
+  if (action === 'play') {
+    replaceIcon('tv-hud-icon', 'play');
+    refreshIcons();
+    hud.classList.add('show');
+    
+    // Masquer après 800ms
+    hudTimeout = setTimeout(() => {
+      hud.classList.remove('show');
+    }, 800);
+  } else if (action === 'pause') {
+    replaceIcon('tv-hud-icon', 'pause');
+    refreshIcons();
+    hud.classList.add('show');
+  } else if (action === 'hide') {
+    hud.classList.remove('show');
+  }
+}
+
 
 // ==========================================
 // BROADCAST DE PROGRESSION (toutes les secondes)
@@ -549,6 +590,9 @@ socket.on('tv_command', (command) => {
       tvControlsOverlay.classList.remove('visible');
     }
 
+    // Cacher également le HUD
+    updatePlayPauseHUD('hide');
+
     // Afficher le QR code pliable
     const qrCard = document.getElementById('tv-qr-card');
     if (qrCard) {
@@ -627,6 +671,7 @@ socket.on('tv_command', (command) => {
       skipSegments = [];
       stopProgressBroadcast(true);
       updatePlayPauseTVIcon(false);
+      updatePlayPauseHUD('hide');
       
       // Masquer l'overlay TV
       if (tvControlsOverlay) tvControlsOverlay.classList.remove('visible');
@@ -692,6 +737,13 @@ function showTVOverlay() {
   
   clearTimeout(overlayTimeout);
   
+  // Si le lecteur est en pause, on ne masque PAS l'overlay
+  if (player && isPlayerReady && typeof player.getPlayerState === 'function') {
+    if (player.getPlayerState() === YT.PlayerState.PAUSED) {
+      return; // Ne pas masquer l'overlay quand la vidéo est en pause
+    }
+  }
+  
   // Si le champ de recherche TV ou le panneau admin est actif, on ne masque PAS l'overlay
   const tvSearchInput = document.getElementById('tv-search-input');
   if (tvSearchInput && document.activeElement === tvSearchInput) {
@@ -711,6 +763,14 @@ function showTVOverlay() {
       if (adminPanel && adminPanel.classList.contains('active')) {
         return;
       }
+      
+      // On masque l'overlay uniquement si la vidéo n'est pas en pause
+      if (player && isPlayerReady && typeof player.getPlayerState === 'function') {
+        if (player.getPlayerState() === YT.PlayerState.PAUSED) {
+          return;
+        }
+      }
+      
       tvControlsOverlay.classList.remove('visible');
       // Cacher le pointeur pour une immersion totale style TV/Projecteur
       document.body.style.cursor = 'none';
