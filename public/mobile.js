@@ -74,6 +74,7 @@ const queueCountBadge = document.getElementById('queue-count');
 const subTabRechercheBtn = document.getElementById('sub-tab-recherche-btn');
 const subTabHistoriqueBtn = document.getElementById('sub-tab-historique-btn');
 const subTabFavorisBtn = document.getElementById('sub-tab-favoris-btn');
+const subTabSuggestionsBtn = document.getElementById('sub-tab-suggestions-btn');
 
 // Panels
 const searchPanel = document.getElementById('search-panel');
@@ -83,6 +84,7 @@ const interactionsPanel = document.getElementById('interactions-panel');
 const subPanelRecherche = document.getElementById('sub-panel-recherche');
 const subPanelHistorique = document.getElementById('sub-panel-historique');
 const subPanelFavoris = document.getElementById('sub-panel-favoris');
+const subPanelSuggestions = document.getElementById('sub-panel-suggestions');
 
 // Search inputs
 const searchInput = document.getElementById('search-input');
@@ -91,6 +93,7 @@ const mobileWrapper = document.querySelector('.mobile-wrapper');
 const resultsList = document.getElementById('results-list');
 const historyList = document.getElementById('history-list');
 const favoritesList = document.getElementById('favorites-list');
+const suggestionsList = document.getElementById('suggestions-list');
 const queueList = document.getElementById('queue-list');
 
 // Mini Player DOM
@@ -301,6 +304,11 @@ subTabFavorisBtn.addEventListener('click', () => {
   closeMobileSearch(false);
   switchSubPanel('sub-panel-favoris', subTabFavorisBtn);
   renderFavoritesList();
+});
+subTabSuggestionsBtn.addEventListener('click', () => {
+  closeMobileSearch(false);
+  switchSubPanel('sub-panel-suggestions', subTabSuggestionsBtn);
+  generateSuggestions();
 });
 
 // ==========================================
@@ -551,6 +559,139 @@ function renderHistoryList() {
   refreshIcons();
 }
 
+// Extract artist name from video title (e.g. "Loveni Ft. Myth Syzer - Verse La Gnôle" -> "Loveni")
+function extractArtist(title) {
+  if (!title) return null;
+  const parts = title.split(/\s*[-–:|]\s*/);
+  if (parts.length > 1) {
+    let artist = parts[0].trim();
+    artist = artist.split(/\s+(?:ft\.?|feat\.?|featuring|&|,)\s+/i)[0];
+    return artist.trim();
+  }
+  return null;
+}
+
+// Get ranked list of most frequent artists in history and favorites
+function getTopArtists() {
+  const counts = {};
+  [...myFavorites, ...myHistory].forEach(item => {
+    const artist = extractArtist(item.title);
+    if (artist) {
+      counts[artist] = (counts[artist] || 0) + 1;
+    }
+  });
+  return Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+}
+
+// Generate personalized song suggestions based on top artists
+async function generateSuggestions() {
+  if (!suggestionsList) return;
+  
+  const artistList = getTopArtists();
+  if (artistList.length === 0) {
+    suggestionsList.innerHTML = `<li class="empty-list-placeholder">Ajoutez des favoris ou écoutez des musiques pour recevoir des suggestions personnalisées !</li>`;
+    return;
+  }
+  
+  suggestionsList.innerHTML = `
+    <li class="empty-list-placeholder">
+      <div style="display:inline-block; width:20px; height:20px; border:3px solid var(--border-color); border-top-color:var(--primary); border-radius:50%; animation: spin 1s linear infinite; margin-right: 8px; vertical-align: middle;"></div>
+      Génération des suggestions...
+    </li>
+  `;
+  
+  try {
+    const selectedArtists = artistList.slice(0, 3);
+    const promises = selectedArtists.map(artist => 
+      fetch(`/api/search?q=${encodeURIComponent(artist)}`)
+        .then(res => res.ok ? res.json() : [])
+        .catch(() => [])
+    );
+    
+    const searchResults = await Promise.all(promises);
+    let allVideos = [];
+    searchResults.forEach(videos => {
+      allVideos = allVideos.concat(videos);
+    });
+    
+    const uniqueVideos = [];
+    const seenIds = new Set();
+    const excludedIds = new Set([
+      ...myFavorites.map(x => x.id),
+      ...myHistory.map(x => x.id),
+      ...currentPlaylist.map(x => x.id),
+      ...(currentVideoPlaying ? [currentVideoPlaying.id] : [])
+    ]);
+    
+    allVideos.forEach(video => {
+      if (!seenIds.has(video.id) && !excludedIds.has(video.id)) {
+        seenIds.add(video.id);
+        uniqueVideos.push(video);
+      }
+    });
+    
+    const suggestions = uniqueVideos.slice(0, 12);
+    renderSuggestions(suggestions);
+  } catch (err) {
+    suggestionsList.innerHTML = `<li class="empty-list-placeholder" style="color:var(--danger);">❌ Impossible de générer des suggestions pour le moment.</li>`;
+  }
+}
+
+// Render the suggestions list items
+function renderSuggestions(videos) {
+  suggestionsList.innerHTML = '';
+  if (videos.length === 0) {
+    suggestionsList.innerHTML = `<li class="empty-list-placeholder">Aucune suggestion trouvée pour le moment. Essayez d'écouter d'autres titres !</li>`;
+    return;
+  }
+  
+  videos.forEach(video => {
+    const isFav = myFavorites.some(x => x.id === video.id);
+    const li = document.createElement('li');
+    li.className = 'search-item';
+    li.innerHTML = `
+      <div class="item-thumb-container">
+        <img class="item-thumb" src="${video.thumbnail}" alt="miniature">
+        <span class="item-duration">${video.duration}</span>
+      </div>
+      <div class="item-details">
+        <h4 class="item-title">${escapeHTML(video.title)}</h4>
+      </div>
+      <div class="add-btn-group">
+        <button class="favorite-btn ${isFav ? 'active' : ''}" title="Favori">
+          <i data-lucide="heart" style="width: 14px; height: 14px;"></i>
+        </button>
+        <button class="add-btn" title="Ajouter à la file">
+          <i data-lucide="plus" style="width: 18px;"></i>
+        </button>
+      </div>
+    `;
+    
+    const favBtn = li.querySelector('.favorite-btn');
+    favBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleFavorite(video);
+      favBtn.classList.toggle('active');
+    });
+    
+    const addBtn = li.querySelector('.add-btn');
+    li.addEventListener('click', () => {
+      socket.emit('add_to_queue', video);
+      showRichToast(video, false);
+      addToHistory(video);
+      if (addBtn) {
+        addBtn.innerHTML = '<i data-lucide="check" style="width:18px;"></i>';
+        addBtn.style.background = 'var(--emerald)';
+        refreshIcons();
+      }
+    });
+    
+    suggestionsList.appendChild(li);
+  });
+  
+  refreshIcons();
+}
+
 // ==========================================
 // 5. PLAYLIST SYNC AND RENDER
 // ==========================================
@@ -673,16 +814,6 @@ function renderQueueList() {
       </div>
     ` : '';
     
-    // Upvote display
-    const hasVoted = item.upvotes && item.upvotes.includes(myUserId);
-    const voteCount = item.upvotes ? item.upvotes.length : 0;
-    const voteBtnHtml = `
-      <button class="upvote-btn ${hasVoted ? 'active' : ''}" data-queue-id="${item.queueId}">
-        <i data-lucide="arrow-up" style="width:14px; height:14px;"></i>
-        <span>${voteCount}</span>
-      </button>
-    `;
-    
     li.innerHTML = `
       ${dragHandleHtml}
       <div class="queue-index">#${index + 1}</div>
@@ -694,16 +825,9 @@ function renderQueueList() {
         <div class="queue-item-meta">Par <span>${escapeHTML(item.addedBy)}</span> (${item.duration})</div>
       </div>
       <div class="queue-item-actions">
-        ${voteBtnHtml}
         ${deleteBtnHtml}
       </div>
     `;
-    
-    // Bind Upvote click
-    li.querySelector('.upvote-btn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      socket.emit('toggle_upvote', { queueId: item.queueId });
-    });
     
     // Bind Delete click
     if (canDelete) {

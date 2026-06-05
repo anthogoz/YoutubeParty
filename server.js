@@ -387,24 +387,13 @@ io.on('connection', (socket) => {
       duration: videoData.duration,
       addedBy: nickname,
       addedById: socket.id,
-      upvotes: [],
       addedAt: Date.now()
     };
 
     queue.push(newItem);
     console.log(`Vidéo ajoutée par ${nickname} : ${newItem.title}`);
 
-    // APPLIQUER LE FAIR-PLAY SI ACTIF
-    if (isFairPlayActive && queue.length > 1) {
-      queue = reorderFairPlay(queue);
-    } else if (!isFairPlayActive && queue.length > 1) {
-      queue.sort((a, b) => {
-        const votesA = a.upvotes ? a.upvotes.length : 0;
-        const votesB = b.upvotes ? b.upvotes.length : 0;
-        if (votesB !== votesA) return votesB - votesA;
-        return a.addedAt - b.addedAt;
-      });
-    }
+    sortAndReorderQueue();
 
     // Diffuser la file d'attente mise à jour
     io.emit('queue_updated', { queue, currentVideo, isPlaying });
@@ -438,7 +427,6 @@ io.on('connection', (socket) => {
       duration: videoData.duration,
       addedBy: nickname,
       addedById: socket.id,
-      upvotes: [],
       addedAt: Date.now()
     };
 
@@ -582,54 +570,11 @@ io.on('connection', (socket) => {
       isFairPlayActive = !!data.value;
       console.log(`[Fair-Play] Commutateur basculé à ${isFairPlayActive}`);
       
-      if (isFairPlayActive && queue.length > 1) {
-        queue = reorderFairPlay(queue);
-      } else if (!isFairPlayActive && queue.length > 1) {
-        queue.sort((a, b) => {
-          const votesA = a.upvotes ? a.upvotes.length : 0;
-          const votesB = b.upvotes ? b.upvotes.length : 0;
-          if (votesB !== votesA) return votesB - votesA;
-          return a.addedAt - b.addedAt;
-        });
-      }
+      sortAndReorderQueue();
       
       io.emit('fairplay_updated', { isFairPlayActive });
       sendGlobalState();
     }
-  });
-
-  // 4.7b. Voter / Upvoter un morceau de la playlist
-  socket.on('toggle_upvote', (data) => {
-    const { queueId } = data;
-    const client = clients[socket.id];
-    if (!client || !client.userId) return;
-
-    const item = queue.find(x => x.queueId === queueId);
-    if (!item) return;
-
-    if (!item.upvotes) item.upvotes = [];
-
-    const idx = item.upvotes.indexOf(client.userId);
-    if (idx >= 0) {
-      item.upvotes.splice(idx, 1);
-      console.log(`[Upvote] ${client.nickname} a retiré son vote pour : ${item.title}`);
-    } else {
-      item.upvotes.push(client.userId);
-      console.log(`[Upvote] ${client.nickname} a voté pour : ${item.title}`);
-    }
-
-    // Si Fair-Play n'est pas actif, retrier la file
-    if (!isFairPlayActive && queue.length > 1) {
-      queue.sort((a, b) => {
-        const votesA = a.upvotes ? a.upvotes.length : 0;
-        const votesB = b.upvotes ? b.upvotes.length : 0;
-        if (votesB !== votesA) return votesB - votesA;
-        return a.addedAt - b.addedAt;
-      });
-    }
-
-    io.emit('queue_updated', { queue, currentVideo, isPlaying });
-    sendGlobalState();
   });
 
   // 4.7c. Envoyer un message sur le Chat Soirée
@@ -785,6 +730,17 @@ function checkVetoThreshold() {
   if (vetoVotes.size >= required) {
     console.log(`🗳️ [Veto] Le seuil de veto est atteint (${vetoVotes.size}/${required}). Passage automatique au clip suivant.`);
     playNextVideo();
+  }
+}
+
+function sortAndReorderQueue() {
+  if (queue.length <= 1) return;
+  
+  // Sort overall by addedAt ascending (chronological order)
+  queue.sort((a, b) => a.addedAt - b.addedAt);
+  
+  if (isFairPlayActive) {
+    queue = reorderFairPlay(queue);
   }
 }
 
