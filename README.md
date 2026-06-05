@@ -42,7 +42,7 @@ graph TD
 
 ```text
 YoutubeParty/
-├── .gitignore            # Règles d'exclusion Git (exclut node_modules, masters.json, raccourcis *.lnk)
+├── .gitignore            # Règles d'exclusion Git (exclut node_modules, masters.json, raccourcis *.lnk sauf YoutubeParty.lnk)
 ├── masters.json          # Sauvegarde persistante des User IDs disposant du rôle Master
 ├── package.json          # Dépendances Node.js (express, socket.io, qrcode)
 ├── server.js             # Serveur principal Node.js (gestion d'état, WebSockets et API)
@@ -160,7 +160,8 @@ Dans les 30 dernières secondes d'une chanson, un toast élégant apparaît en b
    ```
 
 ### Lancement
-* **Sous Windows** : Double-cliquez sur `start.bat`. Ce script lance automatiquement le serveur et ouvre `http://localhost:3000/screen.html` dans le navigateur par défaut après 2 secondes.
+* **Le plus simple (Windows)** : Double-cliquez sur le raccourci **`YoutubeParty.lnk`** à la racine du projet pour lancer le serveur et ouvrir automatiquement l'application dans votre navigateur.
+* **Via Script (Windows)** : Double-cliquez sur `start.bat`. Ce script lance le serveur et ouvre `http://localhost:3000/screen.html` après 2 secondes.
 * **Via Terminal** :
    ```bash
    npm start

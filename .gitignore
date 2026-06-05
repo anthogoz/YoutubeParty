@@ -6,6 +6,7 @@ masters.json
 
 # Windows shortcuts containing local paths
 *.lnk
+!YoutubeParty.lnk
 
 # OS files
 Thumbs.db
