@@ -39,104 +39,237 @@
       </div>
     </header>
 
-    <!-- 3. EN COURS DE LECTURE (Aperçu) -->
-    <section class="active-player-section">
-      <div class="now-playing-card glass-panel" id="now-playing-card">
-        <!-- Rempli dynamiquement en JS (Aperçu vidéo active) -->
-        <div class="no-video-active">Aucune vidéo en cours de lecture</div>
-      </div>
+    <!-- 3. CONTENU DES ONGLETS -->
+    <div class="panels-container">
       
-      <!-- CONTENEUR DES RÉACTIONS RAPIDES SOIRÉE -->
-      <div id="mobile-reactions-bar" style="display: none; align-items: center; justify-content: space-between; margin-top: 0.5rem; gap: 0.4rem; padding: 0.2rem 0.4rem;">
-        <button class="reaction-btn" data-type="fire" style="flex: 1; font-size: 1.35rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 12px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;" title="Brûler l'ambiance !">🔥</button>
-        <button class="reaction-btn" data-type="dance" style="flex: 1; font-size: 1.35rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 12px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;" title="Danse !">💃</button>
-        <button class="reaction-btn" data-type="beer" style="flex: 1; font-size: 1.35rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 12px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;" title="Santé !">🍻</button>
-        <button class="reaction-btn" data-type="party" style="flex: 1; font-size: 1.35rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 12px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;" title="Fête !">🎉</button>
-        <button class="reaction-btn" data-type="hundred" style="flex: 1; font-size: 1.35rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 12px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;" title="100% !">💯</button>
-      </div>
-    </section>
+      <!-- Onglet 1: Rechercher (avec ses sous-onglets) -->
+      <div class="panel-content active" id="search-panel">
+        <!-- Sous-Onglets Navigation -->
+        <div class="sub-tabs-container">
+          <button class="sub-tab-btn active" id="sub-tab-recherche-btn">Recherche</button>
+          <button class="sub-tab-btn" id="sub-tab-historique-btn">Historique</button>
+          <button class="sub-tab-btn" id="sub-tab-favoris-btn">Favoris</button>
+        </div>
 
-    <!-- 4. ONGLETS DE NAVIGATION -->
+        <!-- Sous-Panel 1: Recherche Active -->
+        <div class="sub-panel active" id="sub-panel-recherche">
+          <div class="search-container" style="display:flex; gap:0.6rem; align-items:center; width:100%; margin-bottom: 0.8rem;">
+            <button id="search-back-btn" class="glass-panel" style="display:none; border:1px solid var(--border-color); background:rgba(255,255,255,0.04); color:#fff; border-radius:12px; width:40px; height:40px; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;">
+              <i data-lucide="arrow-left" style="width:18px; height:18px;"></i>
+            </button>
+            <div style="position:relative; flex:1;">
+              <i data-lucide="search" class="search-icon" style="width: 18px;"></i>
+              <input type="search" id="search-input" class="search-input" placeholder="Rechercher sur YouTube ou coller un lien..." autocomplete="off">
+            </div>
+          </div>
+          <ul class="results-list" id="results-list">
+            <li class="empty-list-placeholder">
+              Recherchez un clip ou collez son lien ci-dessus pour l'ajouter à la playlist !
+            </li>
+          </ul>
+        </div>
+
+        <!-- Sous-Panel 2: Historique -->
+        <div class="sub-panel" id="sub-panel-historique">
+          <ul class="history-list" id="history-list">
+            <li class="empty-list-placeholder">Aucun titre dans l'historique de cette session.</li>
+          </ul>
+        </div>
+
+        <!-- Sous-Panel 3: Favoris -->
+        <div class="sub-panel" id="sub-panel-favoris">
+          <ul class="favorites-list" id="favorites-list">
+            <li class="empty-list-placeholder">Vous n'avez aucun titre favori. Cliquez sur l'icône cœur d'un morceau pour l'ajouter !</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Onglet 2: Playlist / File d'attente -->
+      <div class="panel-content" id="queue-panel">
+        <ul class="queue-list" id="queue-list">
+          <li class="empty-queue">La file d'attente est vide pour l'instant. Ajoutez des clips depuis l'onglet Rechercher !</li>
+        </ul>
+      </div>
+
+      <!-- Onglet 3: Soirée / Interactions -->
+      <div class="panel-content" id="interactions-panel">
+        <!-- Live Chat -->
+        <div class="chat-container glass-panel">
+          <div class="chat-header">
+            <i data-lucide="message-square" style="width:16px;"></i> Live Chat
+          </div>
+          <div class="chat-history" id="chat-history">
+            <div class="chat-placeholder">Bienvenue dans la fête ! Envoyez un message pour qu'il s'affiche sur la TV !</div>
+          </div>
+          <div class="chat-input-bar">
+            <input type="text" id="chat-input" placeholder="Écrire un message..." maxlength="80" autocomplete="off">
+            <button id="chat-send-btn">
+              <i data-lucide="send" style="width:16px;"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Reactions Grid -->
+        <div class="reactions-grid-panel glass-panel">
+          <div class="panel-section-title"><i data-lucide="smile" style="width: 14px;"></i> Envoyer une Réaction</div>
+          <div class="reactions-grid">
+            <button class="reaction-btn" data-type="fire" title="Feu !">🔥 <span class="reaction-label">Feu</span></button>
+            <button class="reaction-btn" data-type="dance" title="Danse !">💃 <span class="reaction-label">Danse</span></button>
+            <button class="reaction-btn" data-type="beer" title="Santé !">🍻 <span class="reaction-label">Santé</span></button>
+            <button class="reaction-btn" data-type="party" title="Fête !">🎉 <span class="reaction-label">Fête</span></button>
+            <button class="reaction-btn" data-type="hundred" title="100% !">💯 <span class="reaction-label">100%</span></button>
+          </div>
+        </div>
+
+        <!-- Master Settings Panel -->
+        <div class="master-settings-panel glass-panel" id="mobile-master-settings" style="display: none;">
+          <div class="panel-section-title" style="color: var(--emerald);">
+            <i data-lucide="crown" style="width: 14px;"></i> Paramètres Master
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-title">Playlist Équitable (Fair-Play)</span>
+              <span class="setting-desc">Alterne automatiquement les morceaux entre les invités</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="mobile-fairplay-checkbox" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 4. STICKY MINI PLAYER BAR (S'affiche en bas, juste au-dessus des onglets) -->
+    <div class="mini-player-bar" id="mini-player" style="display: none;">
+      <div class="mini-progress-track">
+        <div class="mini-progress-fill" id="mini-progress-fill" style="width: 0%;"></div>
+      </div>
+      <div class="mini-player-content">
+        <div class="mini-player-info" id="mini-player-info-click">
+          <img id="mini-player-thumb" class="mini-player-thumb" src="" alt="miniature">
+          <div class="mini-player-meta">
+            <div class="mini-player-title" id="mini-player-title">Titre de la vidéo...</div>
+            <div class="mini-player-user-label">Ajouté par <span id="mini-player-user">--</span></div>
+          </div>
+        </div>
+        <div class="mini-player-controls">
+          <button class="mini-control-btn" id="mini-play-pause-btn" title="Play/Pause">
+            <i data-lucide="play" id="mini-play-pause-icon"></i>
+          </button>
+          <button class="mini-control-btn" id="mini-action-btn" title="Action">
+            <i data-lucide="skip-forward" id="mini-action-icon"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. SLIDE-UP FULL-SCREEN PLAYER OVERLAY -->
+    <div class="full-player-overlay" id="full-player">
+      <div class="full-player-backdrop" id="full-player-backdrop"></div>
+      <div class="full-player-container">
+        <!-- Close Header -->
+        <header class="full-player-header">
+          <button id="full-player-close-btn" class="icon-btn">
+            <i data-lucide="chevron-down"></i>
+          </button>
+          <div class="full-player-header-title">En lecture</div>
+          <div style="width: 40px;"></div> <!-- space spacer -->
+        </header>
+
+        <!-- Large rotating/glowing Artwork -->
+        <div class="full-player-artwork-section">
+          <div class="artwork-container">
+            <img id="full-player-artwork" class="artwork-img" src="" alt="Artwork">
+            <div class="artwork-glow" id="full-player-artwork-glow"></div>
+          </div>
+        </div>
+
+        <!-- Video Details -->
+        <div class="full-player-details">
+          <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <div class="full-player-meta">
+              <h2 id="full-player-title" class="full-title">Titre du clip</h2>
+              <div class="full-user">Ajouté par <span id="full-player-user">Pseudo</span></div>
+            </div>
+            <!-- Star/Heart Button for Favorites -->
+            <button id="full-player-favorite-btn" class="favorite-toggle-btn" title="Favori">
+              <i data-lucide="heart" id="full-favorite-icon"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Seek Bar Slider -->
+        <div class="full-player-progress-section">
+          <div class="progress-slider-container">
+            <input type="range" id="full-progress-slider" min="0" max="100" value="0" step="0.1" class="progress-slider">
+            <div class="progress-time-labels">
+              <span id="full-progress-current">0:00</span>
+              <span id="full-progress-total">0:00</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Playback Controls -->
+        <div class="full-player-controls-section">
+          <!-- Previous -->
+          <button class="full-control-btn" id="full-prev-btn" title="Précédent">
+            <i data-lucide="skip-back"></i>
+          </button>
+          <!-- Play/Pause -->
+          <button class="full-control-btn play-pause-large" id="full-play-pause-btn" title="Play/Pause">
+            <i data-lucide="play" id="full-play-pause-icon" style="width: 28px; height: 28px;"></i>
+          </button>
+          <!-- Skip / Veto -->
+          <button class="full-control-btn" id="full-next-btn" title="Suivant / Veto">
+            <i data-lucide="skip-forward" id="full-next-icon"></i>
+          </button>
+        </div>
+
+        <!-- Veto status bar if Guest (Hidden for Master) -->
+        <div class="full-player-veto-section" id="full-veto-section" style="display: none;">
+          <button id="full-veto-btn" class="veto-large-btn" title="Voter Veto">
+            <i data-lucide="shield-alert" style="width:16px; height:16px;"></i>
+            <span>Voter Veto (<span id="full-veto-count">0</span>/<span id="full-veto-required">0</span>)</span>
+          </button>
+        </div>
+
+        <!-- Volume control (Master only) -->
+        <div class="full-player-volume-section" id="full-volume-section" style="display: none;">
+          <i data-lucide="volume-2" id="full-vol-icon" style="width: 18px; color: var(--text-secondary);"></i>
+          <input type="range" id="full-vol-slider" min="0" max="100" value="100" class="vol-slider">
+          <span id="full-vol-text" style="font-size:0.8rem; font-weight:700; color:var(--emerald); min-width:32px; text-align:right;">100%</span>
+        </div>
+
+        <!-- Emoji Reactions Row -->
+        <div class="full-player-reactions-section">
+          <div class="reactions-row">
+            <button class="reaction-btn font-emoji" data-type="fire" title="🔥">🔥</button>
+            <button class="reaction-btn font-emoji" data-type="dance" title="💃">💃</button>
+            <button class="reaction-btn font-emoji" data-type="beer" title="🍻">🍻</button>
+            <button class="reaction-btn font-emoji" data-type="party" title="🎉">🎉</button>
+            <button class="reaction-btn font-emoji" data-type="hundred" title="💯">💯</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. BARRE DE NAVIGATION (TAB BAR FIXÉE AU BAS) -->
     <nav class="tab-navigation">
       <button class="tab-btn active" id="search-tab-btn">
-        <i data-lucide="search" style="width: 18px;"></i> Rechercher
+        <i data-lucide="search" style="width: 18px;"></i>
+        <span>Rechercher</span>
       </button>
       <button class="tab-btn" id="queue-tab-btn">
-        <i data-lucide="music-4" style="width: 18px;"></i> Playlist (<span id="queue-count">0</span>)
+        <i data-lucide="list-music" style="width: 18px;"></i>
+        <span>Playlist (<span id="queue-count">0</span>)</span>
+      </button>
+      <button class="tab-btn" id="party-tab-btn">
+        <i data-lucide="party-popper" style="width: 18px;"></i>
+        <span>Soirée</span>
       </button>
     </nav>
-
-    <!-- 5. CONTENU DES ONGLETS -->
-    <!-- Onglet Recherche -->
-    <div class="panel-content active" id="search-panel">
-      <div class="search-container" style="display:flex; gap:0.6rem; align-items:center; width:100%; margin-bottom: 1rem;">
-        <button id="search-back-btn" class="glass-panel" style="display:none; border:1px solid var(--border-color); background:rgba(255,255,255,0.04); color:#fff; border-radius:12px; width:40px; height:40px; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;">
-          <i data-lucide="arrow-left" style="width:18px; height:18px;"></i>
-        </button>
-        <div style="position:relative; flex:1;">
-          <i data-lucide="search" class="search-icon" style="width: 18px;"></i>
-          <input type="search" id="search-input" class="search-input" placeholder="Rechercher..." autocomplete="off">
-        </div>
-      </div>
-      
-      <ul class="results-list" id="results-list">
-        <!-- Rempli par les résultats de recherche en JS -->
-        <li style="color: var(--text-muted); font-size: 0.95rem; text-align: center; padding: 2rem;">
-          Recherchez une vidéo ci-dessus pour l'ajouter à la soirée !
-        </li>
-      </ul>
-    </div>
-
-    <!-- Onglet Playlist / File d'attente -->
-    <div class="panel-content" id="queue-panel">
-      <ul class="queue-list" id="queue-list">
-        <!-- Liste dynamique des vidéos en attente -->
-        <li class="empty-queue">La file d'attente est vide pour l'instant.</li>
-      </ul>
-    </div>
-
-    <!-- 6. BARRE DE CONTRÔLES MASTER (Flottante en bas, affichée selon le rôle) -->
-    <div class="master-controls-panel" id="master-controls">
-      <div class="master-panel-title">
-        <i data-lucide="crown" style="width: 14px;"></i> CONTRÔLES MASTER ACTIVE
-      </div>
-      <div class="master-buttons">
-        <button class="control-btn" id="prev-btn" title="Retour au morceau précédent">
-          <i data-lucide="skip-back"></i>
-        </button>
-        <button class="control-btn btn-play-pause" id="play-pause-btn" title="Play/Pause">
-          <i data-lucide="play" id="play-pause-icon"></i>
-        </button>
-        <button class="control-btn" id="skip-btn" title="Passer à la vidéo suivante">
-          <i data-lucide="skip-forward"></i>
-        </button>
-        
-        <!-- BOUTON DE VETO DÉMOCRATIQUE (Accessible à TOUS, Master + Invités) -->
-        <button id="mobile-veto-btn" style="background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.25); color: var(--danger); font-size: 0.78rem; font-weight: 700; padding: 0.4rem 0.8rem; border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 0.35rem; transition: all 0.2s; margin-left: auto;" title="Voter pour skipper le son actuel">
-          <i data-lucide="shield-alert" style="width: 14px; height: 14px;"></i>
-          <span>VETO (<span id="mobile-veto-count">0</span>/<span id="mobile-veto-required">0</span>)</span>
-        </button>
-      </div>
-
-      <!-- SLIDER DE VOLUME MASTER (Visible et utilisable uniquement par les Masters) -->
-      <div class="master-volume-container" id="master-volume-container" style="margin-top: 0.3rem; display: flex; align-items: center; gap: 0.8rem; padding: 0 0.5rem;">
-        <i data-lucide="volume-2" id="vol-icon-indicator" style="width: 18px; color: var(--text-secondary);"></i>
-        <input type="range" id="vol-slider" min="0" max="100" value="100" style="flex: 1; accent-color: var(--primary); height: 6px; border-radius: 3px; background: rgba(255,255,255,0.1); border: none; outline: none; cursor: pointer;">
-        <span id="vol-value-text" style="font-size: 0.8rem; font-weight: 700; min-width: 32px; text-align: right; color: var(--emerald);">100%</span>
-      </div>
-
-      <!-- COMMUTATEUR FAIR-PLAY MOBILE MASTER -->
-      <div id="mobile-fairplay-container" style="display: none; align-items: center; justify-content: space-between; margin-top: 0.5rem; padding: 0.3rem 0.5rem; border-top: 1px solid rgba(255,255,255,0.05);">
-        <div style="display: flex; align-items: center; gap: 0.4rem; color: var(--text-secondary); font-size: 0.72rem; font-weight: 600;">
-          <i data-lucide="shuffle" style="width: 14px; height: 14px;"></i>
-          <span>PLAYLIST ÉQUITABLE (FAIR-PLAY)</span>
-        </div>
-        <label class="switch" style="transform: scale(0.85); transform-origin: right;">
-          <input type="checkbox" id="mobile-fairplay-checkbox" checked>
-          <span class="slider"></span>
-        </label>
-      </div>
-    </div>
 
     <!-- 7. ALERTE DISCRÈTE (TOAST MOBILE) -->
     <div class="mobile-toast" id="mobile-toast">Erreur lors de l'action.</div>

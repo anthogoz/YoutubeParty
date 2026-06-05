@@ -25,6 +25,13 @@ function loadVideoNow(video) {
   if (!player || typeof player.loadVideoById !== 'function') return;
   isTransitioning = true; // Début du chargement d'un nouveau clip
   player.loadVideoById(video.id);
+  
+  // Mettre à jour l'Ambilight en arrière-plan
+  const amb = document.getElementById('ambilight-bg');
+  if (amb) {
+    amb.style.backgroundImage = `url(https://i.ytimg.com/vi/${video.id}/hqdefault.jpg)`;
+  }
+  
   try {
     player.unMute();
     player.setVolume(currentVolume);
@@ -672,6 +679,12 @@ socket.on('tv_command', (command) => {
       stopProgressBroadcast(true);
       updatePlayPauseTVIcon(false);
       updatePlayPauseHUD('hide');
+      
+      // Nettoyer l'Ambilight
+      const ambBg = document.getElementById('ambilight-bg');
+      if (ambBg) {
+        ambBg.style.backgroundImage = 'none';
+      }
       
       // Masquer l'overlay TV
       if (tvControlsOverlay) tvControlsOverlay.classList.remove('visible');
@@ -1336,4 +1349,93 @@ function initCollapsibleCards() {
       });
     }
   }
+}
+
+// ==========================================
+// 12. FULLSCREEN & LIVE CHAT MARQUEE TV LOGIC
+// ==========================================
+
+const tvFsBtn = document.getElementById('tv-fullscreen-btn');
+if (tvFsBtn) {
+  tvFsBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleFullscreen();
+  });
+}
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(err => {
+      console.error(`Erreur d'activation du plein écran: ${err.message}`);
+    });
+  } else {
+    document.exitFullscreen();
+  }
+}
+
+document.addEventListener('fullscreenchange', () => {
+  if (document.fullscreenElement) {
+    replaceIcon('tv-fs-icon', 'shrink');
+  } else {
+    replaceIcon('tv-fs-icon', 'expand');
+  }
+  refreshIcons();
+});
+
+// Bind 'F' key for Fullscreen (Space, ArrowRight, ArrowLeft are already bounded)
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key.toLowerCase() === 'f') {
+    e.preventDefault();
+    toggleFullscreen();
+  }
+});
+
+// Chat Marquee Listener
+socket.on('new_chat_message', (msg) => {
+  createScrollingChatMsg(msg);
+});
+
+function createScrollingChatMsg(msg) {
+  const container = document.getElementById('tv-chat-marquee-container');
+  if (!container) return;
+
+  const msgDiv = document.createElement('div');
+  msgDiv.className = 'marquee-msg';
+
+  let roleBadge = '👤';
+  if (msg.role === 'Master') roleBadge = '👑';
+  else if (msg.role === 'Screen') roleBadge = '📺';
+
+  msgDiv.innerHTML = `
+    <span style="color: var(--primary); font-weight: 800; font-size: 0.9em; margin-right: 6px;">${roleBadge} ${escapeHTML(msg.nickname)}:</span>
+    <span style="color: #fff;">${escapeHTML(msg.text)}</span>
+  `;
+
+  // Track allocation (up to 3 tracks) to prevent layout overlaps
+  const activeMessages = container.querySelectorAll('.marquee-msg');
+  let track = 0;
+  const tracksUsed = new Set();
+  activeMessages.forEach(m => {
+    if (m.dataset.track) {
+      tracksUsed.add(parseInt(m.dataset.track, 10));
+    }
+  });
+
+  for (let i = 0; i < 3; i++) {
+    if (!tracksUsed.has(i)) {
+      track = i;
+      break;
+    }
+  }
+
+  msgDiv.dataset.track = track;
+  msgDiv.style.top = `${track * 45}px`;
+
+  container.appendChild(msgDiv);
+
+  // Remove element after marquee finishes running
+  setTimeout(() => {
+    msgDiv.remove();
+  }, 8500);
 }

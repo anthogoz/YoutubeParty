@@ -386,7 +386,9 @@ io.on('connection', (socket) => {
       thumbnail: videoData.thumbnail,
       duration: videoData.duration,
       addedBy: nickname,
-      addedById: socket.id
+      addedById: socket.id,
+      upvotes: [],
+      addedAt: Date.now()
     };
 
     queue.push(newItem);
@@ -395,6 +397,13 @@ io.on('connection', (socket) => {
     // APPLIQUER LE FAIR-PLAY SI ACTIF
     if (isFairPlayActive && queue.length > 1) {
       queue = reorderFairPlay(queue);
+    } else if (!isFairPlayActive && queue.length > 1) {
+      queue.sort((a, b) => {
+        const votesA = a.upvotes ? a.upvotes.length : 0;
+        const votesB = b.upvotes ? b.upvotes.length : 0;
+        if (votesB !== votesA) return votesB - votesA;
+        return a.addedAt - b.addedAt;
+      });
     }
 
     // Diffuser la file d'attente mise à jour
@@ -428,7 +437,9 @@ io.on('connection', (socket) => {
       thumbnail: videoData.thumbnail,
       duration: videoData.duration,
       addedBy: nickname,
-      addedById: socket.id
+      addedById: socket.id,
+      upvotes: [],
+      addedAt: Date.now()
     };
 
     queue.unshift(newItem); // Placer EN PREMIER
@@ -573,11 +584,75 @@ io.on('connection', (socket) => {
       
       if (isFairPlayActive && queue.length > 1) {
         queue = reorderFairPlay(queue);
+      } else if (!isFairPlayActive && queue.length > 1) {
+        queue.sort((a, b) => {
+          const votesA = a.upvotes ? a.upvotes.length : 0;
+          const votesB = b.upvotes ? b.upvotes.length : 0;
+          if (votesB !== votesA) return votesB - votesA;
+          return a.addedAt - b.addedAt;
+        });
       }
       
       io.emit('fairplay_updated', { isFairPlayActive });
       sendGlobalState();
     }
+  });
+
+  // 4.7b. Voter / Upvoter un morceau de la playlist
+  socket.on('toggle_upvote', (data) => {
+    const { queueId } = data;
+    const client = clients[socket.id];
+    if (!client || !client.userId) return;
+
+    const item = queue.find(x => x.queueId === queueId);
+    if (!item) return;
+
+    if (!item.upvotes) item.upvotes = [];
+
+    const idx = item.upvotes.indexOf(client.userId);
+    if (idx >= 0) {
+      item.upvotes.splice(idx, 1);
+      console.log(`[Upvote] ${client.nickname} a retiré son vote pour : ${item.title}`);
+    } else {
+      item.upvotes.push(client.userId);
+      console.log(`[Upvote] ${client.nickname} a voté pour : ${item.title}`);
+    }
+
+    // Si Fair-Play n'est pas actif, retrier la file
+    if (!isFairPlayActive && queue.length > 1) {
+      queue.sort((a, b) => {
+        const votesA = a.upvotes ? a.upvotes.length : 0;
+        const votesB = b.upvotes ? b.upvotes.length : 0;
+        if (votesB !== votesA) return votesB - votesA;
+        return a.addedAt - b.addedAt;
+      });
+    }
+
+    io.emit('queue_updated', { queue, currentVideo, isPlaying });
+    sendGlobalState();
+  });
+
+  // 4.7c. Envoyer un message sur le Chat Soirée
+  socket.on('send_chat_message', (data) => {
+    const client = clients[socket.id];
+    const isScreen = socket.id === screenSocketId;
+    if (!client && !isScreen) return;
+
+    const nickname = isScreen ? "Écran Principal" : client.nickname;
+    const role = isScreen ? "Screen" : client.role;
+    const userId = isScreen ? "screen" : client.userId;
+
+    const chatMsg = {
+      id: '_' + Math.random().toString(36).substr(2, 9),
+      nickname: nickname,
+      role: role,
+      userId: userId,
+      text: data.text || '',
+      timestamp: Date.now()
+    };
+
+    console.log(`[Chat] ${nickname} [${role}] : ${chatMsg.text}`);
+    io.emit('new_chat_message', chatMsg);
   });
 
   // 4.8. Réception d'émojis réactions

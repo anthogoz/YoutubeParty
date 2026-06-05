@@ -12,6 +12,12 @@
 
   <div class="tv-container">
     
+    <!-- AMBILIGHT BACKDROP EFFECT -->
+    <div id="ambilight-bg" class="ambilight-bg"></div>
+
+    <!-- LIVE CHAT SCROLLING BANNER -->
+    <div id="tv-chat-marquee-container" class="tv-chat-marquee-container"></div>
+    
     <!-- CONTENEUR DE RÉACTIONS FLOAT TV -->
     <div id="tv-reactions-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 95;"></div>
 
@@ -22,7 +28,7 @@
     </div>
 
     <!-- LECTEUR YOUTUBE (Géré par l'API Iframe) -->
-    <div class="video-background">
+    <div class="video-background" style="z-index: 2;">
       <div id="player"></div>
     </div>
 
@@ -86,6 +92,11 @@
           <!-- BOUTON ADMIN (Pour ouvrir le panneau) -->
           <button class="admin-toggle" id="admin-btn" title="Liste des invités et paramètres">
             <i data-lucide="users"></i>
+          </button>
+          
+          <!-- BOUTON FULLSCREEN -->
+          <button class="admin-toggle" id="tv-fullscreen-btn" title="Plein écran (F)">
+            <i data-lucide="expand" id="tv-fs-icon"></i>
           </button>
         </div>
       </div>
