@@ -123,13 +123,21 @@ refreshIcons();
 // ==========================================
 // 2. LOGIQUE DU PANNEAU D'ADMINISTRATION
 // ==========================================
-adminBtn.addEventListener('click', () => {
+adminBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
   adminPanel.classList.toggle('active');
 });
 
-closeAdminBtn.addEventListener('click', () => {
+closeAdminBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
   adminPanel.classList.remove('active');
 });
+
+if (adminPanel) {
+  adminPanel.addEventListener('click', (e) => {
+    e.stopPropagation();
+  });
+}
 
 // Écouter les mises à jour d'état du serveur pour actualiser la liste des invités et de la file d'attente
 socket.on('state_update', (data) => {
@@ -357,6 +365,7 @@ const tvProgressTrack = document.getElementById('tv-progress-track');
 
 if (tvProgressTrack) {
   tvProgressTrack.addEventListener('click', (e) => {
+    e.stopPropagation();
     if (!player || !isPlayerReady || typeof player.getDuration !== 'function') return;
     const rect = tvProgressTrack.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
@@ -806,6 +815,11 @@ document.addEventListener('keydown', showTVOverlay);
 document.addEventListener('click', (e) => {
   // Toujours afficher l'overlay au clic pour donner du feedback
   showTVOverlay();
+  
+  // Ignorer si le clic s'est produit sur un élément qui a été détaché du DOM lors d'un traitement précédent
+  if (!document.contains(e.target)) {
+    return;
+  }
   
   // Ignorer si on clique sur un bouton, un input, un slider, un lien, ou à l'intérieur d'un panneau/carte interactive
   if (
@@ -1310,6 +1324,7 @@ function initCollapsibleCards() {
     if (!qrCard.dataset.listenerAttached) {
       qrCard.dataset.listenerAttached = 'true';
       qrCard.addEventListener('click', (e) => {
+        e.stopPropagation();
         if (qrCard.classList.contains('collapsed')) {
           qrCard.classList.remove('collapsed');
           replaceIcon('tv-qr-chevron', 'chevron-up');
@@ -1332,6 +1347,7 @@ function initCollapsibleCards() {
     if (!queueCard.dataset.listenerAttached) {
       queueCard.dataset.listenerAttached = 'true';
       queueCard.addEventListener('click', (e) => {
+        e.stopPropagation();
         if (queueCard.classList.contains('collapsed')) {
           queueCard.classList.remove('collapsed');
           replaceIcon('tv-queue-chevron', 'chevron-up');
