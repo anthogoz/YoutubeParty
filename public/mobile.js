@@ -145,10 +145,7 @@ const chatSendBtn = document.getElementById('chat-send-btn');
 const mobileMasterSettings = document.getElementById('mobile-master-settings');
 const mobileFairplayCheckbox = document.getElementById('mobile-fairplay-checkbox');
 
-// Skip overlay
-const skipConfirmOverlay = document.getElementById('skip-confirm-overlay');
-const skipCancelBtn = document.getElementById('skip-cancel-btn');
-const skipYesBtn = document.getElementById('skip-yes-btn');
+
 
 const mobileToast = document.getElementById('mobile-toast');
 const richToast = document.getElementById('rich-toast');
@@ -991,7 +988,7 @@ fullPlayPauseBtn.addEventListener('click', (e) => {
 // Veto or Skip Actions based on role
 function triggerNextOrVeto() {
   if (myRole === 'Master') {
-    showSkipConfirm();
+    socket.emit('player_command', { action: 'skip' });
   } else {
     socket.emit('vote_veto');
   }
@@ -1016,23 +1013,6 @@ fullPrevBtn.addEventListener('click', (e) => {
   e.stopPropagation();
   if (myRole !== 'Master') return;
   socket.emit('player_command', { action: 'previous' });
-});
-
-// Skip popup confirmation
-function showSkipConfirm() {
-  skipConfirmOverlay.classList.add('show');
-}
-function hideSkipConfirm() {
-  skipConfirmOverlay.classList.remove('show');
-}
-
-skipCancelBtn.addEventListener('click', hideSkipConfirm);
-skipYesBtn.addEventListener('click', () => {
-  socket.emit('player_command', { action: 'skip' });
-  hideSkipConfirm();
-});
-skipConfirmOverlay.addEventListener('click', (e) => {
-  if (e.target === skipConfirmOverlay) hideSkipConfirm();
 });
 
 // Master settings volume sync
