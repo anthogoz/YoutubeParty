@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>YoutubeParty - Écran Principal</title>
-  <link rel="stylesheet" href="style.css?v=1.0.21">
+  <link rel="stylesheet" href="style.css?v=1.0.22">
   <!-- Icônes Lucide pour un rendu moderne -->
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
@@ -207,13 +207,17 @@
         <i data-lucide="qr-code" class="tv-icon-main" id="tv-qr-icon"></i>
         <div class="tv-card-header-text" style="display:flex; flex-direction:column; justify-content:center; flex: 1; min-width: 0;">
           <span style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:var(--primary); letter-spacing:0.5px;">Rejoindre la Fête</span>
-          <span id="tv-overlay-url" style="font-family:monospace; font-size:1.05rem; color:var(--emerald); font-weight:700; margin-top:0.1rem;">Connexion...</span>
+          <span style="font-size:0.7rem; color:var(--text-secondary); font-weight:600; margin-top:0.1rem;">Scannez pour vous connecter</span>
         </div>
         <i data-lucide="chevron-down" class="tv-chevron" id="tv-qr-chevron"></i>
       </div>
-      <div class="tv-card-body" style="display:flex; align-items:center; gap:1.2rem; width: 100%; margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 0.8rem;">
+      <div class="tv-card-body" style="display:flex; flex-direction:column; align-items:center; text-align:center; gap:1rem; width: 100%; margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 0.8rem;">
         <img id="tv-overlay-qr-image" class="tv-overlay-qr-image" src="" alt="QR">
-        <span style="font-size:0.8rem; color:var(--text-secondary); line-height:1.4;">Scannez pour rejoindre la playlist et ajouter vos musiques !</span>
+        <div style="display:flex; flex-direction:column; gap:0.3rem; width: 100%;">
+          <span style="font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); font-weight:800; letter-spacing:0.5px;">Ou accédez à :</span>
+          <span id="tv-overlay-url" style="font-size:0.95rem; color:var(--emerald); font-weight:700; word-break:break-all; padding: 0.4rem 0.6rem; background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.15); border-radius: 8px; font-family: monospace;">Connexion...</span>
+        </div>
+        <span style="font-size:0.85rem; color:var(--text-secondary); line-height:1.4; max-width: 260px;">Scannez pour rejoindre la playlist et ajouter vos musiques !</span>
       </div>
     </div>
 
