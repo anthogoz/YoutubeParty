@@ -3,6 +3,7 @@ node_modules/
 
 # Runtime persistence data
 masters.json
+history.json
 
 # Windows shortcuts containing local paths
 *.lnk
