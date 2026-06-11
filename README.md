@@ -42,8 +42,9 @@ graph TD
 
 ```text
 YoutubeParty/
-├── .gitignore            # Règles d'exclusion Git (exclut node_modules, masters.json, raccourcis *.lnk sauf YoutubeParty.lnk)
+├── .gitignore            # Règles d'exclusion Git (exclut node_modules, masters.json, history.json, etc.)
 ├── masters.json          # Sauvegarde persistante des User IDs disposant du rôle Master
+├── history.json          # Sauvegarde persistante de l'historique global de lecture et des statistiques veto
 ├── package.json          # Dépendances Node.js (express, socket.io, qrcode)
 ├── server.js             # Serveur principal Node.js (gestion d'état, WebSockets et API)
 ├── start.bat             # Script Windows de lancement rapide (serveur + ouverture TV)
@@ -60,20 +61,24 @@ YoutubeParty/
 ## ⚙️ Architecture Technique
 
 ### 1. Backend (`server.js`)
-Développé avec **Express** et **Socket.io**, il gère l'état de l'application en mémoire vive :
+Développé avec **Express** et **Socket.io**, il gère l'état de l'application en mémoire vive et sur disque :
 * **Playlist / File d'attente (`queue`)** : Tableau des pistes à suivre.
-* **Historique (`history`)** : Les 30 dernières vidéos jouées pour permettre un retour arrière.
-* **Clients connectés (`clients`)** : Liste des sockets connectées et typées.
+* **Historique de session (`history`)** : Les 30 dernières vidéos jouées pour permettre un retour arrière.
+* **Historique global persistant (`history.json`)** : Sauvegarde continue de toutes les chansons jouées (y compris le marquage des vetos) pour alimenter le podium de soirée et les classements.
+* **Clients connectés (`clients`)** : Liste des sockets connectées, enrichie de leur pseudo, avatar émoji, rôle, et liste de favoris synchronisée.
+* **Cache de recherche (`searchCache`)** : Stockage en mémoire (Map, max 200 entrées, TTL de 24h) des requêtes de recherche YouTube pour accélérer les chargements et éviter d'être banni par YouTube.
 * **Veto (`vetoVotes`)** : Ensemble d'identifiants uniques d'utilisateurs ayant voté pour zapper la chanson en cours.
 
 ### 2. Frontend TV (`public/screen.html` & `public/screen.js`)
 * Intègre l'**API YouTube Iframe Player** pour contrôler la lecture, le volume et le statut (lecture/pause/fin).
 * Débloque le son de manière invisible au premier clic utilisateur (bypass des règles d'Autoplay des navigateurs modernes).
+* Gère l'affichage dynamique de la veille (Lobby vide sans connecté vs. Lobby actif avec grille d'invités connectés sous forme d'avatars flottants).
 * Affiche un menu d'administration permettant de promouvoir un utilisateur au rôle de **Master** ou d'activer le mode **Fair-Play**.
 
 ### 3. Frontend Mobile (`public/mobile.html` & `public/mobile.js`)
-* Processus de connexion nécessitant la saisie d'un pseudo (stocké localement avec un `userId` persistant).
-* Deux onglets principaux : **Recherche** et **Playlist**.
+* Processus de connexion nécessitant la saisie d'un pseudo et le choix d'un avatar émoji (pré-sélectionné au hasard et modifiable à tout moment).
+* Raccourci d'auto-connexion : si des identifiants existent dans le stockage local (`localStorage`), l'écran d'enregistrement est masqué et la connexion socket est établie instantanément. Le profil reste éditable en cliquant sur le badge utilisateur.
+* Trois sections dans l'onglet Suggestions : suggestions personnalisées (selon votre artiste préféré), classiques de la soirée (histoire globale) et mix des favoris des autres invités connectés.
 * Une interface dynamique adaptant ses boutons en fonction du rôle de l'utilisateur (les boutons administrateur/master ne sont visibles et interactifs que pour le rôle `Master`).
 
 ---
@@ -120,6 +125,20 @@ Dans les 30 dernières secondes d'une chanson, un toast élégant apparaît en b
 * **Raccourcis clavier** : La touche `Espace` contrôle Play/Pause, tandis que les touches `Flèche Droite` et `Flèche Gauche` permettent de zapper au morceau suivant ou précédent.
 * **Masquage du curseur** : Le pointeur de la souris disparaît automatiquement après 3 secondes d'inactivité pour une expérience visuelle épurée (style cinéma / TV connectée).
 
+### 🎨 9. Système d'Avatars Émojis
+* Lors de sa connexion, chaque invité choisit un émoji en guise d'avatar (pré-sélectionné au hasard).
+* L'avatar est persisté localement sur le smartphone et synchronisé avec le serveur.
+* Il s'affiche sur la TV (liste d'administration, chat marquee, toast de lancement de chanson, cartes lobby) et sur le mobile (badge utilisateur cliquable pour l'éditer, playlist, chat, podium).
+
+### 📡 10. Lobby de Veille Dynamique (Lobby Vide vs Actif)
+* **Lobby Vide (0 connecté)** : Grand QR Code au centre avec 3 étapes explicatives de connexion.
+* **Lobby Actif (1+ connecté, pas de musique)** : Le QR Code est réduit sur le côté. Une grille d'invités connectés sous forme d'avatars flottants est générée dynamiquement avec des micro-animations en apesanteur (`float-guest`). Les cartes distinguent visuellement les administrateurs (`👑 Master`) des invités (`👤 Guest`).
+
+### 🎲 11. Suggestions Collaboratives
+* **Recommandé pour vous** : Le mobile analyse vos favoris locaux pour extraire votre artiste préféré et interroge YouTube pour vous proposer une sélection sur-mesure.
+* **Les Classiques de la soirée** : Listes de titres réels les plus écoutés, extraits de l'historique de lecture sans aucune chanson factice.
+* **Le Mix des Invités** : Les favoris des invités connectés dans la pièce sont envoyés via l'événement `sync_favorites` et fusionnés pour que chacun puisse piocher dans les coups de cœur des autres.
+
 ---
 
 ## ⚡ Événements Socket.io (Protocole Réseau)
@@ -142,6 +161,7 @@ Dans les 30 dernières secondes d'une chanson, un toast élégant apparaît en b
 * `vote_veto` : Soumet ou retire un vote de veto.
 * `toggle_fairplay` : Active ou désactive le mode Fair-Play.
 * `emoji_reaction` : Envoie une réaction.
+* `sync_favorites` : Transmet la liste des favoris personnels de l'invité connectés au serveur.
 * `progress_update` : Transmet la position actuelle du lecteur (émis par la TV).
 * `video_started` / `video_ended` : Confirme le statut de lecture de la vidéo en cours (émis par la TV).
 
