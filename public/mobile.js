@@ -75,6 +75,7 @@ const subTabRechercheBtn = document.getElementById('sub-tab-recherche-btn');
 const subTabHistoriqueBtn = document.getElementById('sub-tab-historique-btn');
 const subTabFavorisBtn = document.getElementById('sub-tab-favoris-btn');
 const subTabSuggestionsBtn = document.getElementById('sub-tab-suggestions-btn');
+const subTabStatsBtn = document.getElementById('sub-tab-stats-btn');
 
 // Panels
 const searchPanel = document.getElementById('search-panel');
@@ -85,6 +86,7 @@ const subPanelRecherche = document.getElementById('sub-panel-recherche');
 const subPanelHistorique = document.getElementById('sub-panel-historique');
 const subPanelFavoris = document.getElementById('sub-panel-favoris');
 const subPanelSuggestions = document.getElementById('sub-panel-suggestions');
+const subPanelStats = document.getElementById('sub-panel-stats');
 
 // Search inputs
 const searchInput = document.getElementById('search-input');
@@ -153,11 +155,70 @@ const richToastImg = document.getElementById('rich-toast-img');
 const richToastTitle = document.getElementById('rich-toast-title');
 
 // ==========================================
-// 1. NICKNAME MANAGEMENT
+// 1. NICKNAME & AVATAR MANAGEMENT
 // ==========================================
+const PARTY_EMOJIS = ['🎵', '🎧', '🎤', '🎸', '🎹', '🕺', '💃', '🍻', '🍹', '🎉', '🔥', '👑', '😎', '🤪', '👾', '🦄', '🐼', '🍕', '🚀', '🤠', '🐱', '🦊', '🦁'];
+let selectedAvatar = PARTY_EMOJIS[0];
+
+function initEmojiSelector() {
+  const container = document.getElementById('emoji-selector');
+  if (!container) return;
+
+  const savedAvatar = localStorage.getItem('party_avatar');
+  if (savedAvatar && PARTY_EMOJIS.includes(savedAvatar)) {
+    selectedAvatar = savedAvatar;
+  } else {
+    // Choisir un émoji au hasard au premier lancement
+    selectedAvatar = PARTY_EMOJIS[Math.floor(Math.random() * PARTY_EMOJIS.length)];
+  }
+
+  container.innerHTML = '';
+  PARTY_EMOJIS.forEach(emoji => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `emoji-btn ${emoji === selectedAvatar ? 'selected' : ''}`;
+    btn.textContent = emoji;
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedAvatar = emoji;
+      localStorage.setItem('party_avatar', selectedAvatar);
+    });
+    container.appendChild(btn);
+  });
+}
+
+// Initialiser les composants mobiles au démarrage
+document.addEventListener('DOMContentLoaded', () => {
+  initEmojiSelector();
+});
+// Lancement immédiat également
+initEmojiSelector();
+
 const savedNickname = localStorage.getItem('party_nickname');
 if (savedNickname) {
-  nicknameInput.value = savedNickname;
+  myNickname = savedNickname;
+  if (nicknameInput) nicknameInput.value = savedNickname;
+  if (setupScreen) {
+    setupScreen.style.display = 'none';
+    setupScreen.style.opacity = '0';
+  }
+  if (badgeName) {
+    badgeName.textContent = `${selectedAvatar} ${myNickname}`;
+  }
+}
+
+// Click on profile badge to edit nickname and emoji
+if (userBadge) {
+  userBadge.addEventListener('click', () => {
+    if (setupScreen) {
+      setupScreen.style.display = 'flex';
+      setupScreen.style.opacity = '1';
+    }
+    if (nicknameInput) {
+      nicknameInput.focus();
+    }
+  });
 }
 
 joinPartyBtn.addEventListener('click', joinParty);
@@ -183,10 +244,12 @@ function joinParty() {
   socket.emit('join', {
     type: 'mobile',
     nickname: myNickname,
+    avatar: selectedAvatar,
     userId: myUserId
   });
+  syncFavoritesWithServer();
   
-  badgeName.textContent = myNickname;
+  badgeName.textContent = `${selectedAvatar} ${myNickname}`;
 }
 
 socket.on('connection_established', (data) => {
@@ -195,8 +258,10 @@ socket.on('connection_established', (data) => {
     socket.emit('join', {
       type: 'mobile',
       nickname: myNickname,
+      avatar: selectedAvatar,
       userId: myUserId
     });
+    syncFavoritesWithServer();
     showToast('Connexion rétablie !', 'success');
   }
 });
@@ -222,7 +287,7 @@ if (window.history && window.history.replaceState) {
 socket.on('role_updated', (newRole) => {
   myRole = newRole;
   userBadge.className = `user-badge ${myRole.toLowerCase()}`;
-  badgeName.textContent = `${myRole === 'Master' ? '👑 ' : ''}${myNickname}`;
+  badgeName.textContent = `${myRole === 'Master' ? '👑 ' : ''}${selectedAvatar} ${myNickname}`;
   
   if (myRole === 'Master') {
     showToast("Vous êtes le Master !", "success");
@@ -306,6 +371,11 @@ subTabSuggestionsBtn.addEventListener('click', () => {
   closeMobileSearch(false);
   switchSubPanel('sub-panel-suggestions', subTabSuggestionsBtn);
   generateSuggestions();
+});
+subTabStatsBtn.addEventListener('click', () => {
+  closeMobileSearch(false);
+  switchSubPanel('sub-panel-stats', subTabStatsBtn);
+  fetchAndRenderStats();
 });
 
 // ==========================================
@@ -449,6 +519,12 @@ function renderSearchResults(videos) {
   refreshIcons();
 }
 
+function syncFavoritesWithServer() {
+  if (socket && socket.connected) {
+    socket.emit('sync_favorites', { favorites: myFavorites });
+  }
+}
+
 function toggleFavorite(video) {
   const idx = myFavorites.findIndex(x => x.id === video.id);
   if (idx >= 0) {
@@ -461,6 +537,7 @@ function toggleFavorite(video) {
   saveFavorites();
   renderFavoritesList();
   updateFavoriteButtonUI();
+  syncFavoritesWithServer();
 }
 
 function addToHistory(video) {
@@ -580,79 +657,115 @@ function getTopArtists() {
   return Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
 }
 
-// Generate personalized song suggestions based on top artists
+// Génère les suggestions (Recommandations personnalisées, Classiques de la soirée, favoris des autres connectés)
 async function generateSuggestions() {
-  if (!suggestionsList) return;
+  const classicsList = document.getElementById('suggestions-list-classics');
+  const activeFavsList = document.getElementById('suggestions-list-active-favorites');
+  const personalizedList = document.getElementById('suggestions-list-personalized');
   
-  const artistList = getTopArtists();
-  if (artistList.length === 0) {
-    suggestionsList.innerHTML = `<li class="empty-list-placeholder">Ajoutez des favoris ou écoutez des musiques pour recevoir des suggestions personnalisées !</li>`;
-    return;
-  }
-  
-  suggestionsList.innerHTML = `
+  const sectionClassics = document.getElementById('section-classics');
+  const sectionActiveFavs = document.getElementById('section-active-favorites');
+  const sectionPersonalized = document.getElementById('section-personalized');
+
+  if (!classicsList || !activeFavsList) return;
+
+  const loadingHTML = `
     <li class="empty-list-placeholder">
-      <div style="display:inline-block; width:20px; height:20px; border:3px solid var(--border-color); border-top-color:var(--primary); border-radius:50%; animation: spin 1s linear infinite; margin-right: 8px; vertical-align: middle;"></div>
-      Génération des suggestions...
+      <div style="display:inline-block; width:16px; height:16px; border:2px solid var(--border-color); border-top-color:var(--primary); border-radius:50%; animation: spin 1s linear infinite; margin-right: 8px; vertical-align: middle;"></div>
+      Chargement...
     </li>
   `;
-  
+  classicsList.innerHTML = loadingHTML;
+  activeFavsList.innerHTML = loadingHTML;
+
+  // 1. Recommandations Personnalisées basées sur les favoris/l'historique de l'utilisateur
+  const topArtists = getTopArtists();
+  if (topArtists.length > 0) {
+    const topArtist = topArtists[0];
+    const titleEl = document.getElementById('personalized-title');
+    if (titleEl) {
+      titleEl.innerHTML = `<i data-lucide="sparkles" style="width:14px; height:14px; color:var(--primary);"></i> Pour vous (car vous aimez ${escapeHTML(topArtist)})`;
+    }
+    if (personalizedList) {
+      personalizedList.innerHTML = loadingHTML;
+    }
+    if (sectionPersonalized) {
+      sectionPersonalized.style.display = 'block';
+    }
+
+    fetch(`/api/search?q=${encodeURIComponent(topArtist + " lyrics")}`)
+      .then(r => r.json())
+      .then(results => {
+        const items = results.slice(0, 5);
+        renderSuggestionSubList(personalizedList, items, sectionPersonalized, `Aucune suggestion trouvée pour ${escapeHTML(topArtist)}.`);
+      })
+      .catch(err => {
+        console.error("Erreur suggestions personnalisées:", err);
+        if (sectionPersonalized) sectionPersonalized.style.display = 'none';
+      });
+  } else {
+    if (sectionPersonalized) {
+      sectionPersonalized.style.display = 'none';
+    }
+  }
+
+  // 2. Classiques et Favoris partagés (requête serveur)
   try {
-    const selectedArtists = artistList.slice(0, 3);
-    const promises = selectedArtists.map(artist => 
-      fetch(`/api/search?q=${encodeURIComponent(artist)}`)
-        .then(res => res.ok ? res.json() : [])
-        .catch(() => [])
-    );
+    const res = await fetch(`/api/recommendations?socketId=${myId}`);
+    if (!res.ok) throw new Error("Erreur de récupération");
+    const data = await res.json();
+
+    // Rendre les Classiques de la Party (Les plus joués de history.json)
+    renderSuggestionSubList(classicsList, data.classics, sectionClassics, "Aucun historique global de lecture pour le moment.");
+
+    // Rendre les favoris des autres DJs (Les favoris cumulés des invités dans la pièce)
+    renderSuggestionSubList(activeFavsList, data.activeFavorites, sectionActiveFavs, "Les autres invités n'ont pas encore de favoris connectés.");
     
-    const searchResults = await Promise.all(promises);
-    let allVideos = [];
-    searchResults.forEach(videos => {
-      allVideos = allVideos.concat(videos);
-    });
-    
-    const uniqueVideos = [];
-    const seenIds = new Set();
-    const excludedIds = new Set([
-      ...myFavorites.map(x => x.id),
-      ...myHistory.map(x => x.id),
-      ...currentPlaylist.map(x => x.id),
-      ...(currentVideoPlaying ? [currentVideoPlaying.id] : [])
-    ]);
-    
-    allVideos.forEach(video => {
-      if (!seenIds.has(video.id) && !excludedIds.has(video.id)) {
-        seenIds.add(video.id);
-        uniqueVideos.push(video);
-      }
-    });
-    
-    const suggestions = uniqueVideos.slice(0, 12);
-    renderSuggestions(suggestions);
   } catch (err) {
-    suggestionsList.innerHTML = `<li class="empty-list-placeholder" style="color:var(--danger);">❌ Impossible de générer des suggestions pour le moment.</li>`;
+    console.error("Erreur suggestions serveur:", err);
+    classicsList.innerHTML = `<li class="empty-list-placeholder" style="color:var(--danger);">❌ Impossible de charger les suggestions.</li>`;
+    activeFavsList.innerHTML = '';
   }
 }
 
-// Render the suggestions list items
-function renderSuggestions(videos) {
-  suggestionsList.innerHTML = '';
-  if (videos.length === 0) {
-    suggestionsList.innerHTML = `<li class="empty-list-placeholder">Aucune suggestion trouvée pour le moment. Essayez d'écouter d'autres titres !</li>`;
+function renderSuggestionSubList(listElement, items, sectionElement, emptyText) {
+  listElement.innerHTML = '';
+  if (!items || items.length === 0) {
+    listElement.innerHTML = `<li class="empty-list-placeholder">${emptyText}</li>`;
     return;
   }
-  
-  videos.forEach(video => {
+
+  // Filtrer pour éviter de proposer des doublons avec la playlist actuelle ou la vidéo en cours
+  const excludedIds = new Set([
+    ...currentPlaylist.map(x => x.id),
+    ...(currentVideoPlaying ? [currentVideoPlaying.id] : [])
+  ]);
+
+  const filteredItems = items.filter(video => !excludedIds.has(video.id));
+
+  if (filteredItems.length === 0) {
+    listElement.innerHTML = `<li class="empty-list-placeholder">Tous ces morceaux sont déjà dans la playlist ou en cours d'écoute !</li>`;
+    return;
+  }
+
+  filteredItems.forEach(video => {
     const isFav = myFavorites.some(x => x.id === video.id);
     const li = document.createElement('li');
     li.className = 'search-item';
+    
+    // Sous-titre dynamique : affiche l'auteur si c'est un autre DJ, ou le nombre d'écoutes si c'est un classique
+    const subtitle = video.addedBy 
+      ? `Ajouté par ${video.addedByAvatar || '🎵'} ${escapeHTML(video.addedBy)}` 
+      : (video.count ? `Joué ${video.count} fois lors de la fête` : `Durée : ${video.duration || 'N/A'}`);
+
     li.innerHTML = `
       <div class="item-thumb-container">
         <img class="item-thumb" src="${video.thumbnail}" alt="miniature">
-        <span class="item-duration">${video.duration}</span>
+        <span class="item-duration">${video.duration || 'N/A'}</span>
       </div>
       <div class="item-details">
         <h4 class="item-title">${escapeHTML(video.title)}</h4>
+        <div style="font-size:0.7rem; color:var(--text-secondary); margin-top:0.15rem;">${subtitle}</div>
       </div>
       <div class="add-btn-group">
         <button class="favorite-btn ${isFav ? 'active' : ''}" title="Favori">
@@ -663,14 +776,14 @@ function renderSuggestions(videos) {
         </button>
       </div>
     `;
-    
+
     const favBtn = li.querySelector('.favorite-btn');
     favBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       toggleFavorite(video);
       favBtn.classList.toggle('active');
     });
-    
+
     const addBtn = li.querySelector('.add-btn');
     li.addEventListener('click', () => {
       socket.emit('add_to_queue', video);
@@ -682,11 +795,134 @@ function renderSuggestions(videos) {
         refreshIcons();
       }
     });
-    
-    suggestionsList.appendChild(li);
+
+    listElement.appendChild(li);
   });
   
   refreshIcons();
+}
+
+
+async function fetchAndRenderStats() {
+  const songsList = document.getElementById('stats-songs-list');
+  const djsList = document.getElementById('stats-djs-list');
+  const vetosList = document.getElementById('stats-vetos-list');
+  
+  if (!songsList || !djsList || !vetosList) return;
+  
+  songsList.innerHTML = `<li style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:1rem 0;">Chargement...</li>`;
+  djsList.innerHTML = `<li style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:1rem 0;">Chargement...</li>`;
+  vetosList.innerHTML = `<li style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:1rem 0;">Chargement...</li>`;
+  
+  try {
+    const res = await fetch('/api/stats');
+    if (!res.ok) throw new Error("Erreur de récupération des stats");
+    const data = await res.json();
+    
+    // 1. Render Top Songs
+    songsList.innerHTML = '';
+    if (data.topSongs.length === 0) {
+      songsList.innerHTML = `<li style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:1rem 0;">Aucune écoute pour le moment</li>`;
+    } else {
+      data.topSongs.forEach((song, idx) => {
+        const li = document.createElement('li');
+        li.style.display = 'flex';
+        li.style.alignItems = 'center';
+        li.style.gap = '0.6rem';
+        li.style.background = 'rgba(255, 255, 255, 0.02)';
+        li.style.padding = '0.4rem 0.6rem';
+        li.style.borderRadius = '8px';
+        
+        let medal = `#${idx + 1}`;
+        if (idx === 0) medal = '🥇';
+        else if (idx === 1) medal = '🥈';
+        else if (idx === 2) medal = '🥉';
+        
+        li.innerHTML = `
+          <span style="font-weight: 800; font-size: 0.9rem; min-width: 24px; text-align: center;">${medal}</span>
+          <img src="${song.thumbnail}" alt="" style="width: 36px; height: 24px; object-fit: cover; border-radius: 4px; flex-shrink: 0;">
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-size: 0.8rem; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHTML(song.title)}</div>
+          </div>
+          <span class="badge" style="font-size: 0.72rem; font-weight: 700; color: var(--primary); background: rgba(99, 102, 241, 0.1); padding: 0.2rem 0.5rem; border-radius: 12px; border: 1px solid rgba(99, 102, 241, 0.2); white-space: nowrap;">
+            ${song.count} ${song.count > 1 ? 'écoutes' : 'écoute'}
+          </span>
+        `;
+        songsList.appendChild(li);
+      });
+    }
+    
+    // 2. Render Top DJs
+    djsList.innerHTML = '';
+    if (data.topDJs.length === 0) {
+      djsList.innerHTML = `<li style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:1rem 0;">Aucun DJ actif pour le moment</li>`;
+    } else {
+      data.topDJs.forEach((dj, idx) => {
+        const li = document.createElement('li');
+        li.style.display = 'flex';
+        li.style.alignItems = 'center';
+        li.style.gap = '0.6rem';
+        li.style.background = 'rgba(255, 255, 255, 0.02)';
+        li.style.padding = '0.4rem 0.6rem';
+        li.style.borderRadius = '8px';
+        
+        let medal = `#${idx + 1}`;
+        if (idx === 0) medal = '👑';
+        else if (idx === 1) medal = '🥈';
+        else if (idx === 2) medal = '🥉';
+        
+        li.innerHTML = `
+          <span style="font-weight: 800; font-size: 0.9rem; min-width: 24px; text-align: center;">${medal}</span>
+          <span style="font-size: 1.2rem;">${dj.avatar}</span>
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-size: 0.8rem; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHTML(dj.name)}</div>
+          </div>
+          <span class="badge" style="font-size: 0.72rem; font-weight: 700; color: var(--emerald); background: rgba(16, 185, 129, 0.1); padding: 0.2rem 0.5rem; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.2); white-space: nowrap;">
+            ${dj.count} ${dj.count > 1 ? 'sons' : 'son'}
+          </span>
+        `;
+        djsList.appendChild(li);
+      });
+    }
+    
+    // 3. Render Top Vetos (Flops)
+    vetosList.innerHTML = '';
+    if (data.topVetos.length === 0) {
+      vetosList.innerHTML = `<li style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:1rem 0;">Aucun veto voté pour le moment</li>`;
+    } else {
+      data.topVetos.forEach((song, idx) => {
+        const li = document.createElement('li');
+        li.style.display = 'flex';
+        li.style.alignItems = 'center';
+        li.style.gap = '0.6rem';
+        li.style.background = 'rgba(255, 255, 255, 0.02)';
+        li.style.padding = '0.4rem 0.6rem';
+        li.style.borderRadius = '8px';
+        
+        let medal = `#${idx + 1}`;
+        if (idx === 0) medal = '💀';
+        else if (idx === 1) medal = '🥈';
+        else if (idx === 2) medal = '🥉';
+        
+        li.innerHTML = `
+          <span style="font-weight: 800; font-size: 0.9rem; min-width: 24px; text-align: center;">${medal}</span>
+          <img src="${song.thumbnail}" alt="" style="width: 36px; height: 24px; object-fit: cover; border-radius: 4px; flex-shrink: 0;">
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-size: 0.8rem; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHTML(song.title)}</div>
+          </div>
+          <span class="badge" style="font-size: 0.72rem; font-weight: 700; color: var(--danger); background: rgba(244, 63, 94, 0.1); padding: 0.2rem 0.5rem; border-radius: 12px; border: 1px solid rgba(244, 63, 94, 0.2); white-space: nowrap;">
+            ${song.count} ${song.count > 1 ? 'vetos' : 'veto'}
+          </span>
+        `;
+        vetosList.appendChild(li);
+      });
+    }
+  } catch (err) {
+    console.error("Erreur d'affichage des stats:", err);
+    songsList.innerHTML = `<li style="color:var(--danger); font-size:0.8rem; text-align:center; padding:1rem 0;">Impossible de charger les stats</li>`;
+    djsList.innerHTML = `<li style="color:var(--danger); font-size:0.8rem; text-align:center; padding:1rem 0;">Impossible de charger les stats</li>`;
+    vetosList.innerHTML = `<li style="color:var(--danger); font-size:0.8rem; text-align:center; padding:1rem 0;">Impossible de charger les stats</li>`;
+  }
 }
 
 // ==========================================
@@ -811,6 +1047,7 @@ function renderQueueList() {
       </div>
     ` : '';
     
+    const avatar = item.addedByAvatar || '🎵';
     li.innerHTML = `
       ${dragHandleHtml}
       <div class="queue-index">#${index + 1}</div>
@@ -819,7 +1056,7 @@ function renderQueueList() {
       </div>
       <div class="queue-item-details">
         <h4 class="queue-item-title">${escapeHTML(item.title)}</h4>
-        <div class="queue-item-meta">Par <span>${escapeHTML(item.addedBy)}</span> (${item.duration})</div>
+        <div class="queue-item-meta">Par <span>${avatar} ${escapeHTML(item.addedBy)}</span> (${item.duration})</div>
       </div>
       <div class="queue-item-actions">
         ${deleteBtnHtml}
@@ -1225,13 +1462,11 @@ socket.on('new_chat_message', (msg) => {
   const msgDiv = document.createElement('div');
   msgDiv.className = `chat-msg ${msg.role.toLowerCase()}`;
   
-  // Assign role color styling
-  let roleBadge = '👤';
-  if (msg.role === 'Master') roleBadge = '👑';
-  else if (msg.role === 'Screen') roleBadge = '📺';
+  // Utiliser l'avatar transmis par le message (ou émoji par défaut)
+  const avatar = msg.avatar || '🎵';
   
   msgDiv.innerHTML = `
-    <span class="chat-sender">${roleBadge} ${escapeHTML(msg.nickname)}:</span>
+    <span class="chat-sender">${avatar} ${escapeHTML(msg.nickname)}:</span>
     <span class="chat-text">${escapeHTML(msg.text)}</span>
   `;
   

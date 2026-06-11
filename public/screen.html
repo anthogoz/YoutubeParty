@@ -35,29 +35,82 @@
     <!-- ÉCRAN DE VEILLE / ACCUEIL (Si file vide) -->
     <div class="idle-overlay" id="idle-overlay">
       <div class="idle-content">
-        <h1 class="party-title">YoutubeParty</h1>
-        <p class="party-subtitle">Prenez le contrôle de la musique collectivement</p>
-        
-        <div class="qr-card-container">
-          <div class="qr-card">
-            <img id="qr-image" class="qr-image" src="" alt="QR Code de connexion">
-            <span class="join-url" id="tv-url">Connexion en cours...</span>
-          </div>
+        <!-- ÉTAT 1 : PERSONNE DE CONNECTÉ (LOBBY VIDE) -->
+        <div id="tv-lobby-empty-state">
+          <h1 class="party-title">YoutubeParty</h1>
+          <p class="party-subtitle"><span class="status-waiting-pulse">📡 En attente de connexion...</span></p>
           
-          <div class="join-info">
-            <div class="join-step">
-              <h3><i data-lucide="qr-code" style="vertical-align: middle; margin-right: 8px;"></i>Étape 1</h3>
-              <p>Scannez le QR Code ci-contre avec votre smartphone.</p>
+          <div class="qr-card-container">
+            <div class="qr-card">
+              <img id="qr-image" class="qr-image" src="" alt="QR Code de connexion">
+              <span class="join-url" id="tv-url">Connexion en cours...</span>
             </div>
             
-            <div class="join-step">
-              <h3><i data-lucide="wifi" style="vertical-align: middle; margin-right: 8px;"></i>Étape 2</h3>
-              <p>Assurez-vous d'être connecté sur le même réseau Wi-Fi local.</p>
+            <div class="join-info">
+              <div class="join-step">
+                <h3><i data-lucide="qr-code" style="vertical-align: middle; margin-right: 8px;"></i>Étape 1</h3>
+                <p>Scannez le QR Code ci-contre avec votre smartphone.</p>
+              </div>
+              
+              <div class="join-step">
+                <h3><i data-lucide="wifi" style="vertical-align: middle; margin-right: 8px;"></i>Étape 2</h3>
+                <p>Assurez-vous d'être connecté sur le même réseau Wi-Fi local.</p>
+              </div>
+              
+              <div class="join-step">
+                <h3><i data-lucide="music" style="vertical-align: middle; margin-right: 8px;"></i>Étape 3</h3>
+                <p>Choisissez un pseudo, cherchez vos clips et ajoutez-les à la playlist !</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ÉTAT 2 : CLIENTS CONNECTÉS MAIS PAS DE MUSIQUE (LOBBY ACTIF) -->
+        <div id="tv-lobby-active-state" style="display: none;">
+          <h1 class="party-title-active">YoutubeParty</h1>
+          <p class="party-subtitle-active">Aucun morceau en cours. Ajoutez des clips depuis votre mobile pour lancer la soirée !</p>
+          
+          <div class="active-lobby-layout">
+            <!-- Zone principale : Showcase des invités connectés -->
+            <div class="active-lobby-showcase">
+              <h3 class="lobby-section-title"><i data-lucide="users" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 8px; color: var(--primary);"></i>Invités Connectés</h3>
+              <div id="tv-active-lobby-guests" class="active-lobby-guests-grid">
+                <!-- Rempli en JS -->
+              </div>
             </div>
             
-            <div class="join-step">
-              <h3><i data-lucide="music" style="vertical-align: middle; margin-right: 8px;"></i>Étape 3</h3>
-              <p>Choisissez un pseudo, cherchez vos clips et ajoutez-les à la playlist !</p>
+            <!-- Zone latérale : QR Code compact pour les nouveaux venus -->
+            <div class="active-lobby-sidebar">
+              <div class="compact-qr-card glass-panel">
+                <h4 style="font-size: 0.8rem; font-weight: 800; color: var(--primary); text-transform: uppercase; margin-bottom: 0.8rem; letter-spacing: 0.5px;">Rejoindre</h4>
+                <img id="qr-image-compact" class="qr-image-compact" src="" alt="QR Code compact">
+                <span class="join-url-compact" id="tv-url-compact">Connexion...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PANNEAU DE STATISTIQUES TV (PODIUM) -->
+        <div id="tv-stats-container" class="tv-stats-container glass-panel" style="display: none; margin-top: 3rem; padding: 1.5rem; text-align: left; max-width: 900px; margin-left: auto; margin-right: auto; border-color: rgba(255, 255, 255, 0.08); background: rgba(10, 10, 15, 0.65);">
+          <h2 style="font-size: 1.3rem; font-weight: 800; color: var(--primary); text-transform: uppercase; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.2rem; display: flex; align-items: center; gap: 0.5rem;">
+            <i data-lucide="trophy" style="width:20px; height:20px;"></i> Podium de la Soirée
+          </h2>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+            <div>
+              <h3 style="font-size: 0.95rem; font-weight: 800; color: var(--emerald); text-transform: uppercase; margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.4rem;">
+                <i data-lucide="crown" style="width:16px; height:16px;"></i> Meilleurs DJs
+              </h3>
+              <ul id="tv-stats-djs-list" style="list-style: none; display: flex; flex-direction: column; gap: 0.5rem;">
+                <!-- Rempli en JS -->
+              </ul>
+            </div>
+            <div>
+              <h3 style="font-size: 0.95rem; font-weight: 800; color: var(--primary); text-transform: uppercase; margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.4rem;">
+                <i data-lucide="music" style="width:16px; height:16px;"></i> Hits les plus Écoutés
+              </h3>
+              <ul id="tv-stats-songs-list" style="list-style: none; display: flex; flex-direction: column; gap: 0.5rem;">
+                <!-- Rempli en JS -->
+              </ul>
             </div>
           </div>
         </div>

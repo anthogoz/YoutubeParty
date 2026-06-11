@@ -28,13 +28,14 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
 const MASTERS_FILE = path.join(__dirname, 'masters.json');
+const STATS_HISTORY_FILE = path.join(__dirname, 'history.json');
 
 // Structure de l'état global en mémoire
 let queue = [];         // Liste des vidéos en attente
 let currentVideo = null; // Vidéo actuellement en cours de lecture
 let isPlaying = false;  // État de lecture actuel (play/pause)
-let history = [];       // Historique des vidéos jouées pour retour arrière
-let clients = {};       // Liste des clients connectés : { socketId: { id, nickname, role, userId, device } }
+let history = [];       // Historique des vidéos jouées pour retour arrière (30 derniers)
+let clients = {};       // Liste des clients connectés : { socketId: { id, nickname, avatar, role, userId, device } }
 let screenSocketId = null; // Socket ID de l'écran principal (PC)
 let isFairPlayActive = true; // Activer le mode playlist équitable par défaut
 let vetoVotes = new Set();  // Set des userId ayant voté Veto pour la vidéo en cours
@@ -60,6 +61,54 @@ function saveMasters() {
   } catch (e) {
     console.error('[Persistance] Impossible de sauvegarder masters.json :', e.message);
   }
+}
+
+// Charger l'historique complet pour les statistiques au démarrage
+let statsHistory = [];
+try {
+  if (fs.existsSync(STATS_HISTORY_FILE)) {
+    const data = fs.readFileSync(STATS_HISTORY_FILE, 'utf8');
+    statsHistory = JSON.parse(data);
+    console.log(`[Persistance] Historique global de ${statsHistory.length} morceau(x) restauré depuis history.json.`);
+  }
+} catch (e) {
+  console.error('[Persistance] Impossible de charger history.json :', e.message);
+}
+
+// Fonction pour sauvegarder l'historique de statistiques sur disque
+function saveHistoryFile() {
+  try {
+    fs.writeFileSync(STATS_HISTORY_FILE, JSON.stringify(statsHistory, null, 2), 'utf8');
+  } catch (e) {
+    console.error('[Persistance] Impossible de sauvegarder history.json :', e.message);
+  }
+}
+
+// Cache pour la recherche YouTube (Map mémoire avec TTL de 24h et limite à 200 entrées)
+const searchCache = new Map();
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 heures
+
+function getCachedSearch(query) {
+  const key = query.trim().toLowerCase();
+  const cached = searchCache.get(key);
+  if (cached) {
+    if (Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      console.log(`[Cache Search] Touché pour la requête : "${query}"`);
+      return cached.data;
+    } else {
+      searchCache.delete(key);
+    }
+  }
+  return null;
+}
+
+function setCachedSearch(query, data) {
+  const key = query.trim().toLowerCase();
+  if (searchCache.size >= 200) {
+    const oldestKey = searchCache.keys().next().value;
+    searchCache.delete(oldestKey);
+  }
+  searchCache.set(key, { timestamp: Date.now(), data });
 }
 
 // ==========================================
@@ -208,6 +257,59 @@ function fetchVideoDetailsOEmbed(videoId, callback) {
   });
 }
 
+// ENDPOINT : RECOMMANDATIONS (Classiques et favoris de la bande)
+app.get('/api/recommendations', (req, res) => {
+  // 1. Les incontournables (les plus joués de history.json)
+  const songCounts = {};
+  const songMeta = {};
+  statsHistory.forEach(entry => {
+    if (!entry.id) return;
+    songCounts[entry.id] = (songCounts[entry.id] || 0) + 1;
+    songMeta[entry.id] = { 
+      id: entry.id, 
+      title: entry.title, 
+      thumbnail: entry.thumbnail, 
+      duration: entry.duration || 'N/A' 
+    };
+  });
+
+  const classics = Object.keys(songCounts)
+    .map(id => ({ ...songMeta[id], count: songCounts[id] }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+
+  // 2. Récupérer les favoris partagés par les autres invités connectés
+  const guestFavorites = [];
+  const seenIds = new Set();
+  const requesterSocketId = req.query.socketId;
+
+  Object.values(clients).forEach(c => {
+    // Exclure les favoris du demandeur pour lui suggérer des nouveautés
+    if (c.id === requesterSocketId) return;
+
+    if (c.favorites && Array.isArray(c.favorites)) {
+      c.favorites.forEach(fav => {
+        if (fav && fav.id && !seenIds.has(fav.id)) {
+          seenIds.add(fav.id);
+          guestFavorites.push({
+            id: fav.id,
+            title: fav.title,
+            thumbnail: fav.thumbnail || `https://i.ytimg.com/vi/${fav.id}/hqdefault.jpg`,
+            duration: fav.duration || 'N/A',
+            addedBy: c.nickname,
+            addedByAvatar: c.avatar
+          });
+        }
+      });
+    }
+  });
+
+  res.json({
+    classics: classics,
+    activeFavorites: guestFavorites.slice(0, 10)
+  });
+});
+
 // PROXY RECHERCHE YOUTUBE
 app.get('/api/search', (req, res) => {
   const query = req.query.q;
@@ -232,6 +334,12 @@ app.get('/api/search', (req, res) => {
 });
 
 function performGeneralSearch(query, res) {
+  // Vérifier d'abord le cache
+  const cached = getCachedSearch(query);
+  if (cached) {
+    return res.json(cached);
+  }
+
   // 1. Essai avec l'API YouTube officielle si une clé est fournie
   if (YOUTUBE_API_KEY) {
     const apiUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=15&q=${encodeURIComponent(query)}&type=video&key=${YOUTUBE_API_KEY}`;
@@ -248,6 +356,7 @@ function performGeneralSearch(query, res) {
               thumbnail: item.snippet.thumbnails.medium ? item.snippet.thumbnails.medium.url : item.snippet.thumbnails.default.url,
               duration: 'N/A'
             }));
+            setCachedSearch(query, videos);
             return res.json(videos);
           }
           throw new Error('Format de réponse invalide');
@@ -312,7 +421,9 @@ function searchByScraping(query, res) {
             }
           }
         }
-        res.json(videos.slice(0, 15));
+        const slice = videos.slice(0, 15);
+        setCachedSearch(query, slice);
+        res.json(slice);
       } catch (err) {
         console.error('Erreur scraping YouTube search:', err.message);
         res.status(500).json({ error: 'Échec de la recherche automatique. Collez directement un lien de vidéo YouTube !' });
@@ -325,6 +436,53 @@ function searchByScraping(query, res) {
 }
 
 // ==========================================
+// ENDPOINT : STATISTIQUES PODIUM DE SOIRÉE
+// ==========================================
+app.get('/api/stats', (req, res) => {
+  const songCounts = {};
+  const djCounts = {};
+  const vetoCounts = {};
+  const songMeta = {};
+  const djMeta = {};
+
+  statsHistory.forEach(entry => {
+    if (!entry.id) return;
+    
+    // Top morceaux
+    songCounts[entry.id] = (songCounts[entry.id] || 0) + 1;
+    songMeta[entry.id] = { title: entry.title, thumbnail: entry.thumbnail };
+
+    // Top DJs (exclure l'écran principal)
+    if (entry.addedBy && entry.addedBy !== "Écran Principal") {
+      djCounts[entry.addedBy] = (djCounts[entry.addedBy] || 0) + 1;
+      djMeta[entry.addedBy] = entry.addedByAvatar || '🎵';
+    }
+
+    // Top Vetos
+    if (entry.vetoed) {
+      vetoCounts[entry.id] = (vetoCounts[entry.id] || 0) + 1;
+    }
+  });
+
+  const topSongs = Object.keys(songCounts)
+    .map(id => ({ id, ...songMeta[id], count: songCounts[id] }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
+  const topDJs = Object.keys(djCounts)
+    .map(name => ({ name, avatar: djMeta[name], count: djCounts[name] }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
+  const topVetos = Object.keys(vetoCounts)
+    .map(id => ({ id, ...songMeta[id], count: vetoCounts[id] }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
+  res.json({ topSongs, topDJs, topVetos });
+});
+
+// ==========================================
 // SOCKET.IO : TEMPS RÉEL
 // ==========================================
 io.on('connection', (socket) => {
@@ -335,7 +493,7 @@ io.on('connection', (socket) => {
 
   // 1. Appareil rejoint (soit l'Écran principal PC, soit un Mobile)
   socket.on('join', (data) => {
-    const { type, nickname, userId } = data;
+    const { type, nickname, userId, avatar } = data;
 
     if (type === 'screen') {
       screenSocketId = socket.id;
@@ -357,11 +515,12 @@ io.on('connection', (socket) => {
       clients[socket.id] = {
         id: socket.id,
         nickname: nickname || `Invité-${socket.id.slice(0, 4)}`,
+        avatar: avatar || '🎵',
         role: role,
         userId: userId,
         device: socket.handshake.headers['user-agent'] ? 'Smartphone' : 'Unknown'
       };
-      console.log(`Mobile connecté : ${clients[socket.id].nickname} [${role}] (ID Persistant: ${userId})`);
+      console.log(`Mobile connecté : ${clients[socket.id].nickname} [${role}] (Avatar: ${clients[socket.id].avatar}, ID Persistant: ${userId})`);
       
       // Notifier le mobile de son rôle
       socket.emit('role_updated', role);
@@ -378,6 +537,7 @@ io.on('connection', (socket) => {
     if (!client && !isScreen) return;
 
     const nickname = isScreen ? "Écran Principal" : client.nickname;
+    const userAvatar = isScreen ? "📺" : (client.avatar || "🎵");
 
     const newItem = {
       queueId: '_' + Math.random().toString(36).substr(2, 9), // ID unique dans la playlist locale
@@ -386,6 +546,7 @@ io.on('connection', (socket) => {
       thumbnail: videoData.thumbnail,
       duration: videoData.duration,
       addedBy: nickname,
+      addedByAvatar: userAvatar,
       addedById: socket.id,
       addedAt: Date.now()
     };
@@ -396,7 +557,7 @@ io.on('connection', (socket) => {
     sortAndReorderQueue();
 
     // Diffuser la file d'attente mise à jour
-    io.emit('queue_updated', { queue, currentVideo, isPlaying });
+    broadcastQueue();
 
     // Si aucune vidéo ne tourne actuellement, notifier l'écran de lancer celle-ci !
     if (!currentVideo && screenSocketId) {
@@ -418,6 +579,7 @@ io.on('connection', (socket) => {
     }
 
     const nickname = isScreen ? "Écran Principal" : client.nickname;
+    const userAvatar = isScreen ? "📺" : (client.avatar || "🎵");
 
     const newItem = {
       queueId: '_' + Math.random().toString(36).substr(2, 9),
@@ -426,6 +588,7 @@ io.on('connection', (socket) => {
       thumbnail: videoData.thumbnail,
       duration: videoData.duration,
       addedBy: nickname,
+      addedByAvatar: userAvatar,
       addedById: socket.id,
       addedAt: Date.now()
     };
@@ -433,10 +596,19 @@ io.on('connection', (socket) => {
     queue.unshift(newItem); // Placer EN PREMIER
     console.log(`[PRIORITÉ] Vidéo placée en tête de file par ${nickname} : ${newItem.title}`);
 
-    io.emit('queue_updated', { queue, currentVideo, isPlaying });
+    broadcastQueue();
 
     if (!currentVideo && screenSocketId) {
       playNextVideo();
+    }
+  });
+
+  // 2d. Synchronisation des favoris locaux du client mobile
+  socket.on('sync_favorites', (data) => {
+    const client = clients[socket.id];
+    if (client) {
+      client.favorites = data.favorites || [];
+      console.log(`[Recommandations] Favoris synchronisés pour ${client.nickname} (${client.favorites.length} titres)`);
     }
   });
 
@@ -497,7 +669,7 @@ io.on('connection', (socket) => {
       if (isMaster || isScreen || (item && item.addedById === socket.id)) {
         console.log(`Vidéo retirée par ${isScreen ? 'l\'Écran TV' : client.nickname} : ${item ? item.title : 'inconnu'}`);
         queue = queue.filter(item => item.queueId !== data.queueId);
-        io.emit('queue_updated', { queue, currentVideo });
+        broadcastQueue();
       } else {
         socket.emit('error_message', "Action non autorisée. Vous ne pouvez retirer que vos propres vidéos.");
       }
@@ -537,7 +709,7 @@ io.on('connection', (socket) => {
         console.log(`[Queue] Réorganisée de #${fromIndex} vers #${toIndex} par ${isScreen ? 'l\'Écran TV' : client.nickname}`);
         
         // Diffuser la playlist mise à jour à tout le monde
-        io.emit('queue_updated', { queue, currentVideo });
+        broadcastQueue();
       }
     } else {
       socket.emit('error_message', "Action non autorisée. Seul le Master ou l'écran TV peut réorganiser la file d'attente.");
@@ -586,12 +758,14 @@ io.on('connection', (socket) => {
     const nickname = isScreen ? "Écran Principal" : client.nickname;
     const role = isScreen ? "Screen" : client.role;
     const userId = isScreen ? "screen" : client.userId;
+    const avatar = isScreen ? "📺" : (client.avatar || "🎵");
 
     const chatMsg = {
       id: '_' + Math.random().toString(36).substr(2, 9),
       nickname: nickname,
       role: role,
       userId: userId,
+      avatar: avatar,
       text: data.text || '',
       timestamp: Date.now()
     };
@@ -623,7 +797,8 @@ io.on('connection', (socket) => {
       queue = queue.filter(item => item.id !== videoData.id);
       
       console.log(`Lecture commencée sur la TV : ${videoData.title}`);
-      io.emit('queue_updated', { queue, currentVideo, isPlaying });
+      logVideoPlayed(currentVideo);
+      broadcastQueue();
       sendGlobalState();
     }
   });
@@ -655,6 +830,20 @@ io.on('connection', (socket) => {
   });
 });
 
+// Obtenir la file d'attente actuelle pour les clients
+function getFilteredQueue() {
+  return queue;
+}
+
+// Diffuser l'état de la file d'attente à tout le monde
+function broadcastQueue() {
+  io.emit('queue_updated', {
+    queue: getFilteredQueue(),
+    currentVideo,
+    isPlaying
+  });
+}
+
 // Lancer la vidéo suivante de la file d'attente
 function playNextVideo() {
   vetoVotes.clear(); // Vider les vetos pour la nouvelle vidéo
@@ -671,14 +860,14 @@ function playNextVideo() {
     if (screenSocketId) {
       io.to(screenSocketId).emit('tv_command', { action: 'load_video', video: currentVideo });
     }
-    io.emit('queue_updated', { queue, currentVideo, isPlaying });
+    broadcastQueue();
   } else {
     currentVideo = null;
     console.log('La file d\'attente est vide.');
     if (screenSocketId) {
       io.to(screenSocketId).emit('tv_command', { action: 'show_idle' });
     }
-    io.emit('queue_updated', { queue, currentVideo, isPlaying });
+    broadcastQueue();
   }
 }
 
@@ -697,7 +886,7 @@ function playPreviousVideo(socketCall) {
     if (screenSocketId) {
       io.to(screenSocketId).emit('tv_command', { action: 'load_video', video: currentVideo });
     }
-    io.emit('queue_updated', { queue, currentVideo, isPlaying });
+    broadcastQueue();
   } else {
     if (socketCall) {
       socketCall.emit('error_message', "Aucun clip dans l'historique pour revenir en arrière.");
@@ -708,7 +897,7 @@ function playPreviousVideo(socketCall) {
 // Fonction utilitaire pour envoyer l'état global et les clients à tout le monde
 function sendGlobalState() {
   io.emit('state_update', {
-    queue,
+    queue: getFilteredQueue(),
     currentVideo,
     isPlaying,
     clients: Object.values(clients),
@@ -724,11 +913,38 @@ function getVetoVotesRequired() {
   return Math.max(1, Math.ceil(activeMobileUsers / 2));
 }
 
+function logVideoPlayed(video, vetoed = false) {
+  if (!video) return;
+  const logEntry = {
+    id: video.id,
+    title: video.title,
+    thumbnail: video.thumbnail,
+    addedBy: video.addedBy || "Écran Principal",
+    addedByAvatar: video.addedByAvatar || "🎵",
+    playedAt: Date.now(),
+    vetoed: vetoed
+  };
+  statsHistory.push(logEntry);
+  if (statsHistory.length > 1000) statsHistory.shift(); // Limite de sécurité
+  saveHistoryFile();
+}
+
+function registerLastVideoVetoed() {
+  if (statsHistory.length > 0 && currentVideo) {
+    const last = statsHistory[statsHistory.length - 1];
+    if (last && last.id === currentVideo.id) {
+      last.vetoed = true;
+      saveHistoryFile();
+    }
+  }
+}
+
 function checkVetoThreshold() {
   if (!currentVideo) return;
   const required = getVetoVotesRequired();
   if (vetoVotes.size >= required) {
     console.log(`🗳️ [Veto] Le seuil de veto est atteint (${vetoVotes.size}/${required}). Passage automatique au clip suivant.`);
+    registerLastVideoVetoed();
     playNextVideo();
   }
 }

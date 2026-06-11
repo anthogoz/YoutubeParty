@@ -74,6 +74,12 @@ async function initConfig() {
     qrImage.src = config.qrCodeDataUrl;
     tvUrl.textContent = config.mobileUrl;
 
+    // Configurer le QR code compact de l'état actif
+    const qrImageCompact = document.getElementById('qr-image-compact');
+    const tvUrlCompact = document.getElementById('tv-url-compact');
+    if (qrImageCompact) qrImageCompact.src = config.qrCodeDataUrl;
+    if (tvUrlCompact) tvUrlCompact.textContent = config.mobileUrl;
+
     // Configurer le QR code et le lien affichés sur l'overlay TV
     if (tvOverlayQrImage) tvOverlayQrImage.src = config.qrCodeDataUrl;
     if (tvOverlayUrl) tvOverlayUrl.textContent = config.mobileUrl;
@@ -149,6 +155,9 @@ socket.on('state_update', (data) => {
   if (typeof updateTvFairPlayCheckbox === 'function') {
     updateTvFairPlayCheckbox(data.isFairPlayActive);
   }
+  if (typeof updateTvIdleOverlay === 'function') {
+    updateTvIdleOverlay(data.clients);
+  }
 });
 
 // Écouter également les modifications de playlist pour l'overlay TV
@@ -174,11 +183,15 @@ function renderClientList(clients) {
   mobileClients.forEach(client => {
     const li = document.createElement('li');
     li.className = `client-item ${client.role === 'Master' ? 'is-master' : ''}`;
+    li.style.display = 'flex';
+    li.style.alignItems = 'center';
     
     const isMasterChecked = client.role === 'Master' ? 'checked' : '';
+    const avatar = client.avatar || '🎵';
     
     li.innerHTML = `
-      <div class="client-info">
+      <div style="font-size: 1.5rem; margin-right: 0.8rem; flex-shrink: 0;">${avatar}</div>
+      <div class="client-info" style="flex: 1; min-width: 0;">
         <span class="client-name">${escapeHTML(client.nickname)}</span>
         <span class="client-role ${client.role === 'Master' ? 'master' : ''}">
           ${client.role === 'Master' ? '👑 Master (Contrôle)' : '👤 Guest (Invité)'}
@@ -573,7 +586,8 @@ function showToast(video) {
   // Configurer le bandeau
   toastThumbnail.src = video.thumbnail;
   toastVideoTitle.textContent = video.title;
-  toastUsername.textContent = video.addedBy;
+  const avatar = video.addedByAvatar || '🎵';
+  toastUsername.textContent = `${avatar} ${video.addedBy}`;
   
   // Attendre un court instant pour s'assurer que la classe est bien retirée et réappliquée
   setTimeout(() => {
@@ -596,6 +610,10 @@ socket.on('tv_command', (command) => {
     currentVideo = command.video;
     console.log(`Chargement d'une nouvelle vidéo : ${currentVideo.title}`);
     
+    // Masquer le panneau de statistiques s'il est affiché
+    const tvStatsContainer = document.getElementById('tv-stats-container');
+    if (tvStatsContainer) tvStatsContainer.style.display = 'none';
+
     // Mettre à jour l'overlay de contrôles TV PC
     if (tvOverlayTitle) tvOverlayTitle.textContent = currentVideo.title;
     if (tvOverlayUsername) tvOverlayUsername.textContent = currentVideo.addedBy;
@@ -712,6 +730,11 @@ socket.on('tv_command', (command) => {
       setTimeout(() => {
         idleOverlay.style.opacity = '1';
       }, 50);
+      
+      // Charger et afficher le podium des statistiques de la soirée
+      if (typeof fetchAndRenderTvStats === 'function') {
+        fetchAndRenderTvStats();
+      }
       break;
       
     default:
@@ -927,6 +950,7 @@ function renderTvOverlayQueueList(queue) {
     li.setAttribute('draggable', 'true');
     li.dataset.index = index;
     
+    const avatar = item.addedByAvatar || '🎵';
     li.innerHTML = `
       <div class="tv-drag-handle" style="cursor: grab; display: flex; align-items: center; justify-content: center; color: var(--text-muted); width: 20px; height: 100%; flex-shrink: 0;" title="Faire glisser pour réordonner">
         <i data-lucide="grip-vertical" style="width: 14px; height: 14px;"></i>
@@ -935,7 +959,7 @@ function renderTvOverlayQueueList(queue) {
       <img src="${item.thumbnail}" alt="" style="width: 40px; height: 28px; object-fit: cover; border-radius: 4px; flex-shrink: 0;">
       <div style="flex: 1; min-width: 0;">
         <div style="font-size: 0.75rem; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHTML(item.title)}</div>
-        <div style="font-size: 0.65rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Par ${escapeHTML(item.addedBy)}</div>
+        <div style="font-size: 0.65rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Par ${avatar} ${escapeHTML(item.addedBy)}</div>
       </div>
       <button class="tv-remove-item-btn" data-queue-id="${item.queueId}" style="background: none; border: none; color: var(--text-muted); cursor: pointer; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s;" title="Retirer de la file">
         <i data-lucide="trash-2" style="width: 12px; height: 12px;"></i>
@@ -1419,12 +1443,10 @@ function createScrollingChatMsg(msg) {
   const msgDiv = document.createElement('div');
   msgDiv.className = 'marquee-msg';
 
-  let roleBadge = '👤';
-  if (msg.role === 'Master') roleBadge = '👑';
-  else if (msg.role === 'Screen') roleBadge = '📺';
+  const avatar = msg.avatar || '🎵';
 
   msgDiv.innerHTML = `
-    <span style="color: var(--primary); font-weight: 800; font-size: 0.9em; margin-right: 6px;">${roleBadge} ${escapeHTML(msg.nickname)}:</span>
+    <span style="color: var(--primary); font-weight: 800; font-size: 0.9em; margin-right: 6px;">${avatar} ${escapeHTML(msg.nickname)}:</span>
     <span style="color: #fff;">${escapeHTML(msg.text)}</span>
   `;
 
@@ -1454,4 +1476,135 @@ function createScrollingChatMsg(msg) {
   setTimeout(() => {
     msgDiv.remove();
   }, 8500);
+}
+
+async function fetchAndRenderTvStats() {
+  const container = document.getElementById('tv-stats-container');
+  const djsList = document.getElementById('tv-stats-djs-list');
+  const songsList = document.getElementById('tv-stats-songs-list');
+  
+  if (!container || !djsList || !songsList) return;
+  
+  try {
+    const res = await fetch('/api/stats');
+    if (!res.ok) throw new Error("Erreur stats");
+    const data = await res.json();
+    
+    // Si pas de données de stats, masquer le conteneur
+    if ((!data.topSongs || data.topSongs.length === 0) && (!data.topDJs || data.topDJs.length === 0)) {
+      container.style.display = 'none';
+      return;
+    }
+    
+    // Rendre Top DJs
+    djsList.innerHTML = '';
+    if (!data.topDJs || data.topDJs.length === 0) {
+      djsList.innerHTML = '<li style="color:var(--text-muted); font-size:0.85rem; text-align:center;">Aucun DJ pour le moment</li>';
+    } else {
+      data.topDJs.slice(0, 3).forEach((dj, idx) => {
+        const li = document.createElement('li');
+        li.style.display = 'flex';
+        li.style.alignItems = 'center';
+        li.style.gap = '0.8rem';
+        li.style.background = 'rgba(255,255,255,0.03)';
+        li.style.padding = '0.5rem 0.8rem';
+        li.style.borderRadius = '10px';
+        
+        let crown = '👑';
+        if (idx === 1) crown = '🥈';
+        if (idx === 2) crown = '🥉';
+        
+        li.innerHTML = `
+          <span style="font-size:1.2rem; min-width:24px; text-align:center;">${crown}</span>
+          <span style="font-size:1.4rem;">${dj.avatar}</span>
+          <span style="font-weight:700; color:#fff; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHTML(dj.name)}</span>
+          <span style="font-size:0.75rem; font-weight:800; color:var(--emerald); background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); padding:0.25rem 0.6rem; border-radius:12px; white-space:nowrap;">
+            ${dj.count} ${dj.count > 1 ? 'sons' : 'son'}
+          </span>
+        `;
+        djsList.appendChild(li);
+      });
+    }
+    
+    // Rendre Top Songs
+    songsList.innerHTML = '';
+    if (!data.topSongs || data.topSongs.length === 0) {
+      songsList.innerHTML = '<li style="color:var(--text-muted); font-size:0.85rem; text-align:center;">Aucune chanson écoutée</li>';
+    } else {
+      data.topSongs.slice(0, 3).forEach((song, idx) => {
+        const li = document.createElement('li');
+        li.style.display = 'flex';
+        li.style.alignItems = 'center';
+        li.style.gap = '0.8rem';
+        li.style.background = 'rgba(255,255,255,0.03)';
+        li.style.padding = '0.5rem 0.8rem';
+        li.style.borderRadius = '10px';
+        
+        let trophy = '🥇';
+        if (idx === 1) trophy = '🥈';
+        if (idx === 2) trophy = '🥉';
+        
+        li.innerHTML = `
+          <span style="font-size:1.1rem; min-width:24px; text-align:center;">${trophy}</span>
+          <img src="${song.thumbnail}" alt="" style="width: 42px; height: 28px; object-fit: cover; border-radius: 4px; flex-shrink:0;">
+          <span style="font-weight:700; color:#fff; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHTML(song.title)}</span>
+          <span style="font-size:0.75rem; font-weight:800; color:var(--primary); background:rgba(99,102,241,0.15); border:1px solid rgba(99,102,241,0.3); padding:0.25rem 0.6rem; border-radius:12px; white-space:nowrap;">
+            ${song.count} ${song.count > 1 ? 'écoutes' : 'écoute'}
+          </span>
+        `;
+        songsList.appendChild(li);
+      });
+    }
+    
+    container.style.display = 'block';
+  } catch (err) {
+    console.error("Erreur de récupération des stats TV:", err);
+    container.style.display = 'none';
+  }
+}
+
+function updateTvIdleOverlay(clients) {
+  const emptyState = document.getElementById('tv-lobby-empty-state');
+  const activeState = document.getElementById('tv-lobby-active-state');
+  const activeLobbyGuests = document.getElementById('tv-active-lobby-guests');
+  const partySubtitleActive = document.querySelector('.party-subtitle-active');
+  
+  // Filtrer pour n'obtenir que les invités mobiles
+  const mobileClients = clients.filter(c => c.id !== socket.id);
+  
+  if (mobileClients.length === 0) {
+    // Personne de connecté : Afficher l'état vide
+    if (emptyState) emptyState.style.display = 'block';
+    if (activeState) activeState.style.display = 'none';
+  } else {
+    // Quelqu'un est connecté : Afficher l'état actif
+    if (emptyState) emptyState.style.display = 'none';
+    if (activeState) activeState.style.display = 'block';
+    
+    const count = mobileClients.length;
+    if (partySubtitleActive) {
+      partySubtitleActive.innerHTML = `🎉 <strong>${count} invité${count > 1 ? 's connectés' : ' connecté'}</strong> • Aucun morceau en cours de lecture.`;
+    }
+    
+    if (activeLobbyGuests) {
+      activeLobbyGuests.innerHTML = '';
+      mobileClients.forEach((client, index) => {
+        const bubble = document.createElement('div');
+        bubble.className = `active-lobby-guest-card glass-panel ${client.role === 'Master' ? 'is-master' : ''}`;
+        bubble.style.animationDelay = `${index * 0.15}s`;
+        
+        const avatar = client.avatar || '🎵';
+        
+        bubble.innerHTML = `
+          <span class="active-lobby-avatar">${avatar}</span>
+          <span class="active-lobby-name">${escapeHTML(client.nickname)}</span>
+          <span class="active-lobby-role">
+            ${client.role === 'Master' ? '<i data-lucide="crown" style="width:10px;height:10px;vertical-align:middle;margin-right:2px;"></i> Master' : '<i data-lucide="user" style="width:10px;height:10px;vertical-align:middle;margin-right:2px;"></i> Guest'}
+          </span>
+        `;
+        activeLobbyGuests.appendChild(bubble);
+      });
+      refreshIcons();
+    }
+  }
 }
